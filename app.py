@@ -1069,6 +1069,10 @@ elif menu == "Perubahan Pagu":
 
 # ===================== MASTER DATA =====================
 elif menu == "Master Data":
+    if not is_manager(current_user.get("peran", "")):
+        st.warning("Menu ini hanya untuk pengelola (ADMIN / KASUBAG_PEK).")
+        st.stop()
+
     # Lazy load data yang dibutuhkan menu Master Data
     df_wilayah = get_df("MASTER_WILAYAH")
     df_kegiatan = get_df("MASTER_KEGIATAN")
