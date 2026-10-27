@@ -13,7 +13,6 @@ import streamlit as st
 import pandas as pd
 import requests
 import io
-import sqlite3
 from datetime import date, datetime
 from streamlit_gsheets import GSheetsConnection
 
@@ -69,56 +68,6 @@ if "dark_mode" not in st.session_state:
 def get_conn():
     return st.connection("gsheets", type=GSheetsConnection)
 
-# ===================== SQLITE FALLBACK (P3) =====================
-
-SQLITE_PATH = "simkeu_local.db"
-
-def _sqlite_connect():
-    return sqlite3.connect(SQLITE_PATH)
-
-def sqlite_init():
-    """Buat tabel-tabel SQLite lokal jika belum ada."""
-    try:
-        conn = _sqlite_connect()
-        c = conn.cursor()
-        for table, cols in {
-            "TRANSAKSI": "NO INTEGER PRIMARY KEY, SUB KEGIATAN TEXT, KODE_REKENING TEXT, PENGELOMPOKAN TEXT, URAIAN TEXT, JENIS TEXT, NOMINAL REAL, TANGGAL TEXT, BUKTI TEXT, PPTK TEXT, STATUS TEXT",
-            "MASTER_REKENING": "id INTEGER PRIMARY KEY AUTOINCREMENT, kode_rekening TEXT, uraian_rekening TEXT",
-            "MASTER_WILAYAH": "id INTEGER PRIMARY KEY AUTOINCREMENT, nama_wilayah TEXT, kode_wilayah TEXT",
-            "MASTER_KEGIATAN": "id INTEGER PRIMARY KEY AUTOINCREMENT, subkegiatan TEXT, nama_kegiatan TEXT, pagu_awal REAL",
-            "PENGGUNA": "id INTEGER PRIMARY KEY AUTOINCREMENT, user_name TEXT, password TEXT, nama TEXT, peran TEXT",
-            "AUDIT_LOG": "id INTEGER PRIMARY KEY AUTOINCREMENT, WAKTU TEXT, USER TEXT, AKSI TEXT, TABEL TEXT, RECORD_ID TEXT, OLD_VALUES TEXT, NEW_VALUES TEXT",
-            "PERUBAHAN_PAGU": "id INTEGER PRIMARY KEY AUTOINCREMENT, SUB_KEGIATAN TEXT, PAGU_BARU REAL, ALASAN TEXT, DIAJUKAN_OLEH TEXT, TANGGAL_AJUAN TEXT, STATUS TEXT",
-        }.items():
-            c.execute(f"CREATE TABLE IF NOT EXISTS {table} ({cols})")
-        conn.commit()
-        conn.close()
-    except Exception:
-        pass
-
-def sqlite_read(table: str) -> pd.DataFrame:
-    """Baca data dari SQLite lokal."""
-    try:
-        sqlite_init()
-        conn = _sqlite_connect()
-        df = pd.read_sql_query(f"SELECT * FROM {table}", conn)
-        conn.close()
-        return df
-    except Exception:
-        return pd.DataFrame()
-
-def sqlite_write(table: str, df: pd.DataFrame) -> bool:
-    """Tulis ulang data ke SQLite lokal."""
-    try:
-        sqlite_init()
-        conn = _sqlite_connect()
-        df.to_sql(table, conn, if_exists="replace", index=False)
-        conn.commit()
-        conn.close()
-        return True
-    except Exception:
-        return False
-
 # Tandai apakah Google Sheets tersedia
 _gsheets_available = None
 
@@ -157,20 +106,23 @@ if st.session_state.dark_mode:
 
 @st.cache_data(ttl=300)
 def load_sheet(worksheet_name: str) -> pd.DataFrame:
-    """Baca worksheet dengan cache 5 menit. Fallback ke SQLite jika Google Sheets tidak tersedia."""
+    """Baca worksheet dari Google Sheets. Tampilkan error jika tidak dapat terkoneksi."""
     try:
         if check_gsheets_available():
             conn = get_conn()
             df = conn.read(spreadsheet=SPREADSHEET_URL, worksheet=worksheet_name, ttl=30)
             if df is not None and not df.empty:
                 return df
-    except Exception:
-        pass
-    # Fallback ke SQLite
-    return sqlite_read(worksheet_name)
+            return pd.DataFrame()
+        else:
+            st.error("❌ Tidak dapat terkoneksi ke Google Sheets. Pastikan service account sudah di-share ke spreadsheet dan .streamlit/secrets.toml sudah benar.")
+            return pd.DataFrame()
+    except Exception as e:
+        st.error(f"❌ Gagal membaca sheet '{worksheet_name}': {e}")
+        return pd.DataFrame()
 
 def update_sheet_data(worksheet_name: str, df: pd.DataFrame) -> bool:
-    """Tulis ulang seluruh data worksheet. Google Sheets utama, SQLite fallback."""
+    """Tulis ulang seluruh data worksheet ke Google Sheets."""
     try:
         # Reset status koneksi agar pengecekan dilakukan ulang
         check_gsheets_available(force_refresh=True)
@@ -180,12 +132,12 @@ def update_sheet_data(worksheet_name: str, df: pd.DataFrame) -> bool:
             st.cache_resource.clear()
             st.cache_data.clear()  # Bersihkan cache data agar perubahan langsung terlihat
             return True
-    except Exception:
-        pass
-    # Fallback ke SQLite
-    ok = sqlite_write(worksheet_name, df)
-    st.cache_data.clear()  # Bersihkan cache juga pada fallback
-    return ok
+        else:
+            st.error("❌ Tidak dapat terkoneksi ke Google Sheets. Data tidak dapat disimpan.")
+            return False
+    except Exception as e:
+        st.error(f"❌ Gagal menyimpan ke sheet '{worksheet_name}': {e}")
+        return False
 
 def append_transaksi(new_data: dict, user: str = "Sistem"):
     """Tambahkan baris baru ke sheet TRANSAKSI."""
@@ -213,26 +165,9 @@ def append_transaksi(new_data: dict, user: str = "Sistem"):
         conn.update(spreadsheet=SPREADSHEET_URL, worksheet="TRANSAKSI", data=updated)
         write_audit_log("CREATE", "TRANSAKSI", str(next_no), None, new_data, user)
         return True, next_no
-    except Exception:
-        # Fallback ke SQLite
-        try:
-            df_local = sqlite_read("TRANSAKSI")
-            if df_local.empty:
-                df_local = pd.DataFrame(columns=list(new_data.keys()) + ["STATUS"])
-            next_no_local = 1
-            if not df_local.empty and "NO" in df_local.columns:
-                nums = pd.to_numeric(df_local["NO"], errors="coerce").dropna()
-                if not nums.empty:
-                    next_no_local = int(nums.max()) + 1
-            new_data["NO"] = next_no_local
-            new_data["STATUS"] = "Draft"
-            new_row = pd.DataFrame([new_data])
-            updated_local = pd.concat([df_local, new_row], ignore_index=True)
-            sqlite_write("TRANSAKSI", updated_local)
-            write_audit_log("CREATE", "TRANSAKSI", str(next_no_local), None, new_data, user)
-            return True, next_no_local
-        except Exception as e2:
-            return False, str(e2)
+    except Exception as e:
+        st.error(f"❌ Gagal menyimpan transaksi ke Google Sheets: {e}")
+        return False, str(e)
 
 def send_telegram(message: str) -> bool:
     """Kirim notifikasi ke Telegram. Return True jika berhasil."""
