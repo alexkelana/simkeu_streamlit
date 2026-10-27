@@ -58,10 +58,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Inisialisasi dark mode toggle (session_state)
-if "dark_mode" not in st.session_state:
-    st.session_state.dark_mode = False
-
 # ===================== KONEKSI =====================
 @st.cache_resource
 def get_conn():
@@ -84,83 +80,6 @@ def check_gsheets_available(force_refresh: bool = False) -> bool:
     except Exception:
         _gsheets_available = False
     return _gsheets_available
-
-# ===================== THEME / DARK MODE =====================
-if st.session_state.dark_mode:
-    st.markdown(
-        """
-        <style>
-        /* Override semua elemen Streamlit dengan warna gelap */
-        .stApp, .stApp * { background-color: #0e1117 !important; color: #fafafa !important; }
-        .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6 { color: #fafafa !important; }
-        .stApp p, .stApp span, .stApp div, .stApp label { color: #fafafa !important; }
-
-        /* Sidebar */
-        .stSidebar, .stSidebar * { background-color: #0e1117 !important; color: #fafafa !important; }
-        .stSidebar .stRadio > div { background-color: #0e1117 !important; }
-        .stSidebar .stRadio label { color: #fafafa !important; }
-
-        /* Tabel */
-        .stDataFrame, .stDataFrame * { background-color: #0e1117 !important; color: #fafafa !important; }
-        .stTable, .stTable * { background-color: #0e1117 !important; color: #fafafa !important; }
-        .stDataFrame table, .stTable table { background-color: #0e1117 !important; color: #fafafa !important; }
-        .stDataFrame th, .stTable th { background-color: #1a1c23 !important; color: #fafafa !important; }
-        .stDataFrame td, .stTable td { background-color: #0e1117 !important; color: #fafafa !important; }
-
-        /* Metric */
-        .stMetric, .stMetric * { background-color: #1a1c23 !important; color: #fafafa !important; }
-        .stMetric label, .stMetric div { color: #fafafa !important; }
-
-        /* Input dan form */
-        .stTextInput input, .stTextArea textarea, .stSelectbox div, .stNumberInput input,
-        .stMultiSelect div, .stDateInput input, .stTimeInput input {
-            background-color: #1a1c23 !important; color: #fafafa !important; border-color: #4a4a4a !important;
-        }
-        .stSelectbox div[data-baseweb="select"] { background-color: #1a1c23 !important; color: #fafafa !important; }
-
-        /* Tombol */
-        .stButton button { background-color: #4a4a4a !important; color: #fafafa !important; border-color: #6a6a6a !important; }
-        .stButton button:hover { background-color: #6a6a6a !important; color: #fafafa !important; }
-        .stDownloadButton button { background-color: #4a4a4a !important; color: #fafafa !important; border-color: #6a6a6a !important; }
-        .stDownloadButton button:hover { background-color: #6a6a6a !important; color: #fafafa !important; }
-
-        /* Radio, checkbox, toggle */
-        .stRadio label, .stCheckbox label, .stToggle label { color: #fafafa !important; }
-        .stRadio > div { background-color: #0e1117 !important; }
-
-        /* Link */
-        .stApp a { color: #8ab4f8 !important; }
-
-        /* Divider */
-        .stDivider, .stApp hr { border-color: #4a4a4a !important; }
-
-        /* Caption dan teks kecil */
-        .stCaption, .stApp small, .stApp .caption { color: #b0b0b0 !important; }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-else:
-    # Mode terang — pastikan Streamlit menggunakan tema terang bawaan dengan kontras yang jelas
-    st.markdown(
-        """
-        <style>
-        .stApp, .stApp * { background-color: #ffffff !important; color: #000000 !important; }
-        .stSidebar, .stSidebar * { background-color: #f8f9fa !important; color: #000000 !important; }
-        .stDataFrame th, .stTable th { background-color: #f0f2f6 !important; color: #000000 !important; }
-        .stDataFrame td, .stTable td { background-color: #ffffff !important; color: #000000 !important; }
-        .stMetric { background-color: #ffffff !important; color: #000000 !important; }
-        .stButton button { background-color: #ffffff !important; color: #000000 !important; border-color: #cccccc !important; }
-        .stButton button:hover { background-color: #f0f2f6 !important; color: #000000 !important; }
-        .stTextInput input, .stTextArea textarea, .stSelectbox div, .stNumberInput input {
-            background-color: #ffffff !important; color: #000000 !important; border-color: #cccccc !important;
-        }
-        .stApp a { color: #1a73e8 !important; }
-        .stDivider, .stApp hr { border-color: #cccccc !important; }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
 
 @st.cache_data(ttl=300)
 def load_sheet(worksheet_name: str) -> pd.DataFrame:
@@ -884,10 +803,6 @@ with st.sidebar:
     )
     st.divider()
     st.caption("Terhubung ke Google Sheets")
-    dark_label = "🌙 Mode Gelap" if not st.session_state.dark_mode else "☀️ Mode Terang"
-    if st.button(dark_label):
-        st.session_state.dark_mode = not st.session_state.dark_mode
-        st.rerun()
 
     # ---- Filter PPTK (di-set otomatis saat login) ----
     user_peran = str(current_user.get("peran", "")).upper()
