@@ -153,8 +153,9 @@ if st.session_state.dark_mode:
         unsafe_allow_html=True,
     )
 
+@st.cache_data(ttl=300)
 def load_sheet(worksheet_name: str) -> pd.DataFrame:
-    """Baca worksheet. Fallback ke SQLite jika Google Sheets tidak tersedia."""
+    """Baca worksheet dengan cache 5 menit. Fallback ke SQLite jika Google Sheets tidak tersedia."""
     try:
         if check_gsheets_available():
             conn = get_conn()
@@ -613,46 +614,6 @@ def edit_transaksi(no: int, new_data: dict) -> bool:
 
 # ===================== LOAD DATA =====================
 
-# --- Animasi Loading Kustom dengan Progress Bar ---
-st.markdown(
-    """
-    <style>
-    .stProgress > div > div > div > div {
-        background-color: #1f77b4;
-    }
-    .loading-container {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 1.5rem;
-        border-radius: 10px;
-        margin: 1rem 0;
-        color: white;
-    }
-    .loading-title {
-        font-size: 1.2rem;
-        font-weight: bold;
-        margin-bottom: 0.5rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    .loading-sheet {
-        font-size: 0.9rem;
-        opacity: 0.9;
-        margin-top: 0.5rem;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
-loading_container = st.container()
-with loading_container:
-    st.markdown('<div class="loading-container">', unsafe_allow_html=True)
-    st.markdown('<div class="loading-title">🔄 Memuat Data SIMKEU</div>', unsafe_allow_html=True)
-    status_text = st.empty()
-    progress_bar = st.progress(0)
-    st.markdown('</div>', unsafe_allow_html=True)
-
 sheet_list = [
     ("PENGGUNA", "Data Pengguna"),
     ("MASTER_WILAYAH", "Data Wilayah"),
@@ -662,30 +623,44 @@ sheet_list = [
     ("PERUBAHAN_PAGU", "Data Perubahan Pagu"),
 ]
 
-total_sheets = len(sheet_list)
-loaded_data = {}
+# --- Opsi C: Cek apakah data sudah ada di session_state ---
+data_sudah_dimuat = all(
+    f"df_{sheet_name.lower()}" in st.session_state
+    for sheet_name, _ in sheet_list
+)
 
-for i, (sheet_name, label) in enumerate(sheet_list):
-    status_text.markdown(f'<div class="loading-sheet">⏳ Memuat {label}...</div>', unsafe_allow_html=True)
-    loaded_data[sheet_name] = load_sheet(sheet_name)
-    progress_bar.progress((i + 1) / total_sheets)
+if not data_sudah_dimuat:
+    # Animasi Loading Kustom dengan Progress Bar (hanya saat pertama kali)
+    loading_container = st.container()
+    with loading_container:
+        st.markdown('<div class="loading-container">', unsafe_allow_html=True)
+        st.markdown('<div class="loading-title">🔄 Memuat Data SIMKEU</div>', unsafe_allow_html=True)
+        status_text = st.empty()
+        progress_bar = st.progress(0)
+        st.markdown('</div>', unsafe_allow_html=True)
 
-# Assign ke variabel df untuk kompatibilitas kode berikutnya
-df_pengguna = loaded_data["PENGGUNA"]
-df_wilayah = loaded_data["MASTER_WILAYAH"]
-df_rekening = loaded_data["MASTER_REKENING"]
-df_kegiatan = loaded_data["MASTER_KEGIATAN"]
-df_transaksi = loaded_data["TRANSAKSI"]
-df_perubahan = loaded_data["PERUBAHAN_PAGU"]
+    for i, (sheet_name, label) in enumerate(sheet_list):
+        status_text.markdown(f'<div class="loading-sheet">⏳ Memuat {label}...</div>', unsafe_allow_html=True)
+        # Opsi B: st.cache_data menangani pemanggilan berulang ke Google Sheets
+        df = load_sheet(sheet_name)
+        st.session_state[f"df_{sheet_name.lower()}"] = df
+        progress_bar.progress((i + 1) / len(sheet_list))
+
+    loading_container.empty()
+
+# Ambil data dari session_state (Opsi C) — cepat saat pindah menu
+df_pengguna = st.session_state.get("df_pengguna", pd.DataFrame())
+df_wilayah = st.session_state.get("df_wilayah", pd.DataFrame())
+df_rekening = st.session_state.get("df_rekening", pd.DataFrame())
+df_kegiatan = st.session_state.get("df_kegiatan", pd.DataFrame())
+df_transaksi = st.session_state.get("df_transaksi", pd.DataFrame())
+df_perubahan = st.session_state.get("df_perubahan", pd.DataFrame())
 
 # Pastikan kolom STATUS ada (untuk approval transaksi)
 if not df_transaksi.empty and "STATUS" not in df_transaksi.columns:
     df_transaksi["STATUS"] = "Draft"
     df_transaksi["DISETUJUI_OLEH"] = ""
     df_transaksi["TANGGAL_APPROVAL"] = ""
-
-# Hapus container loading setelah selesai
-loading_container.empty()
 
 # ===================== LOGIN =====================
 if "logged_in" not in st.session_state:
@@ -758,6 +733,11 @@ with st.sidebar:
         st.rerun()
     if st.button("Refresh data"):
         st.cache_resource.clear()
+        st.cache_data.clear()
+        # Hapus data dari session_state untuk memaksa pemuatan ulang
+        for sheet_name, _ in sheet_list:
+            key = f"df_{sheet_name.lower()}"
+            st.session_state.pop(key, None)
         st.rerun()
 
 # ===================== TRANSAKSI =====================
