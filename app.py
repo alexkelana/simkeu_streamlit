@@ -935,28 +935,32 @@ elif menu == "Dashboard":
     # ---- Tombol Export (Reporting & Notifikasi P2) ----
     st.divider()
     st.markdown("### Export Laporan")
-    e_col1, e_col2, e_col3 = st.columns(3)
+    e_col1, e_col2 = st.columns(2)
     df_export = df_transaksi if not df_transaksi.empty else pd.DataFrame()
     with e_col1:
-        if OPENPYXL_AVAILABLE and st.button("⬇️ Unduh Excel"):
+        if OPENPYXL_AVAILABLE:
             xlsx_bytes = export_to_excel(df_export)
             st.download_button(
-                label="Klik untuk unduh file Excel",
+                label="⬇️ Unduh Excel",
                 data=xlsx_bytes,
                 file_name="laporan_simkeu.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True,
             )
+        else:
+            st.info("Library openpyxl tidak tersedia.")
     with e_col2:
-        if REPORTLAB_AVAILABLE and st.button("⬇️ Unduh PDF"):
+        if REPORTLAB_AVAILABLE:
             pdf_bytes = export_to_pdf(df_export)
             st.download_button(
-                label="Klik untuk unduh file PDF",
+                label="⬇️ Unduh PDF",
                 data=pdf_bytes,
                 file_name="laporan_simkeu.pdf",
                 mime="application/pdf",
+                use_container_width=True,
             )
-    with e_col3:
-        st.info("Excel: openpyxl | PDF: reportlab")
+        else:
+            st.info("Library reportlab tidak tersedia.")
 
     st.subheader("Realisasi per Sub Kegiatan")
     if not df_kegiatan.empty and not df_transaksi.empty and nominal_col:
