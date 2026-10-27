@@ -651,14 +651,42 @@ with st.sidebar:
         st.session_state.dark_mode = not st.session_state.dark_mode
         st.rerun()
 
-    # ---- Multi-Kecamatan filter (P3) ----
+    # ---- Filter PPTK (per peran) ----
     st.divider()
-    st.markdown("### 🏘️ Kecamatan")
-    kec_opts = ["Candisari", "Jebres", "Laweyan", "Pasar Kliwon", "Serengan", "Banjarsari"]
-    kec_default = st.session_state.get("kecamatan_filter", "Candisari")
-    kec_selected = st.selectbox("Pilih Kecamatan", kec_opts, index=kec_opts.index(kec_default) if kec_default in kec_opts else 0)
-    st.session_state.kecamatan_filter = kec_selected
-    st.caption(f"Data ditampilkan untuk: **{kec_selected}**")
+    st.markdown("### 👤 Filter PPTK")
+    user_peran = str(current_user.get("peran", "")).upper()
+
+    # Kumpulkan daftar PPTK unik dari data transaksi
+    pptk_opts = []
+    if not df_transaksi.empty and "PPTK" in df_transaksi.columns:
+        pptk_list = df_transaksi["PPTK"].dropna().unique().tolist()
+        pptk_opts = sorted([str(p) for p in pptk_list if str(p).strip() != ""])
+
+    if user_peran in ("ADMIN", "KASUBAG_PEK"):
+        # Admin dan Kasubag bisa melihat semua + opsi "Semua"
+        pptk_opts = ["Semua PPTK"] + pptk_opts
+        pptk_default = st.session_state.get("pptk_filter", "Semua PPTK")
+    else:
+        # PPTK hanya bisa melihat dirinya sendiri
+        current_pptk = current_user.get("nama", "") + " (" + (current_user.get("user_name") or current_user.get("username") or "") + ")"
+        if current_pptk not in pptk_opts:
+            pptk_opts = [current_pptk] + pptk_opts
+        pptk_default = current_pptk
+
+    if pptk_opts:
+        try:
+            default_idx = pptk_opts.index(pptk_default) if pptk_default in pptk_opts else 0
+        except ValueError:
+            default_idx = 0
+        pptk_selected = st.selectbox("Pilih PPTK", pptk_opts, index=default_idx)
+        st.session_state.pptk_filter = pptk_selected
+        if user_peran in ("ADMIN", "KASUBAG_PEK") and pptk_selected == "Semua PPTK":
+            st.caption("Data ditampilkan untuk: **Semua PPTK**")
+        else:
+            st.caption(f"Data ditampilkan untuk: **{pptk_selected}**")
+    else:
+        st.info("Belum ada data PPTK.")
+        st.session_state.pptk_filter = None
 
     if st.button("Logout"):
         st.session_state.logged_in = False
@@ -792,6 +820,12 @@ if menu == "Transaksi":
         if filter_status != "Semua":
             df_show = df_show[df_show["STATUS"] == filter_status]
 
+        # Terapkan filter PPTK
+        pptk_filter = st.session_state.get("pptk_filter")
+        user_peran = str(current_user.get("peran", "")).upper()
+        if pptk_filter and pptk_filter != "Semua PPTK" and user_peran not in ("ADMIN", "KASUBAG_PEK"):
+            df_show = df_show[df_show["PPTK"].astype(str) == pptk_filter]
+
         st.caption(f"Menampilkan {len(df_show)} dari {len(df_transaksi)} transaksi")
         st.dataframe(df_show, use_container_width=True, hide_index=True)
 
@@ -882,6 +916,13 @@ elif menu == "Dashboard":
     # Lazy load data yang dibutuhkan menu Dashboard
     df_kegiatan = get_df("MASTER_KEGIATAN")
     df_transaksi = get_df("TRANSAKSI")
+    
+    # Terapkan filter PPTK di Dashboard
+    pptk_filter = st.session_state.get("pptk_filter")
+    user_peran = str(current_user.get("peran", "")).upper()
+    if pptk_filter and pptk_filter != "Semua PPTK" and user_peran not in ("ADMIN", "KASUBAG_PEK"):
+        df_transaksi = df_transaksi[df_transaksi["PPTK"].astype(str) == pptk_filter]
+    
     st.header("Dashboard")
 
     total_pagu = 0
