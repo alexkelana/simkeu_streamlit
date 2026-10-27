@@ -247,12 +247,32 @@ def send_telegram(message: str) -> bool:
     except Exception:
         return False
 
-def check_login(username: str, password: str) -> bool:
-    """Cek username + password dari secrets."""
+def check_login(username: str, password: str, df_pengguna: pd.DataFrame = None) -> bool:
+    """Cek username + password dari Google Sheets (sheet PENGGUNA)."""
     try:
-        if "users" not in st.secrets:
+        if df_pengguna is None or df_pengguna.empty:
             return False
-        return st.secrets["users"].get(username) == password
+
+        # Cari kolom username dan password
+        uname_col = None
+        pass_col = None
+        for col in df_pengguna.columns:
+            col_lower = str(col).strip().lower()
+            if col_lower in ("user_name", "username"):
+                uname_col = col
+            elif col_lower == "password":
+                pass_col = col
+
+        if not uname_col or not pass_col:
+            return False
+
+        user_row = df_pengguna[
+            df_pengguna[uname_col].astype(str).str.strip().str.lower() == username.strip().lower()
+        ]
+        if user_row.empty:
+            return False
+
+        return str(user_row.iloc[0].get(pass_col, "")) == password
     except Exception:
         return False
 
@@ -646,7 +666,7 @@ if not st.session_state.logged_in:
         username = st.text_input("User Name")
         password = st.text_input("Password", type="password")
         if st.form_submit_button("Masuk", type="primary"):
-            if check_login(username.strip().lower(), password):
+            if check_login(username.strip().lower(), password, df_pengguna):
                 uname_col = find_username_column(df_pengguna)
                 if not df_pengguna.empty and uname_col:
                     user_row = df_pengguna[
