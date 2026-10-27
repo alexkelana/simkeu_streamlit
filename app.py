@@ -656,11 +656,19 @@ with st.sidebar:
     st.markdown("### 👤 Filter PPTK")
     user_peran = str(current_user.get("peran", "")).upper()
 
-    # Kumpulkan daftar PPTK unik dari data transaksi
+    # Kumpulkan daftar PPTK dari sheet PENGGUNA (master pengguna)
     pptk_opts = []
-    if not df_transaksi.empty and "PPTK" in df_transaksi.columns:
-        pptk_list = df_transaksi["PPTK"].dropna().unique().tolist()
-        pptk_opts = sorted([str(p) for p in pptk_list if str(p).strip() != ""])
+    if not df_pengguna.empty and "peran" in df_pengguna.columns and "nama" in df_pengguna.columns:
+        df_pptk = df_pengguna[df_pengguna["peran"].astype(str).str.upper() == "PPTK"]
+        if not df_pptk.empty:
+            # Gabungkan nama dan username untuk ditampilkan
+            pptk_list = []
+            for _, row in df_pptk.iterrows():
+                nama = str(row.get("nama", "")).strip()
+                uname = str(row.get("user_name") or row.get("username", "")).strip()
+                label = f"{nama} ({uname})" if uname else nama
+                pptk_list.append(label)
+            pptk_opts = sorted(pptk_list)
 
     if user_peran in ("ADMIN", "KASUBAG_PEK"):
         # Admin dan Kasubag bisa melihat semua + opsi "Semua"
@@ -668,10 +676,12 @@ with st.sidebar:
         pptk_default = st.session_state.get("pptk_filter", "Semua PPTK")
     else:
         # PPTK hanya bisa melihat dirinya sendiri
-        current_pptk = current_user.get("nama", "") + " (" + (current_user.get("user_name") or current_user.get("username") or "") + ")"
-        if current_pptk not in pptk_opts:
-            pptk_opts = [current_pptk] + pptk_opts
-        pptk_default = current_pptk
+        current_pptk_nama = str(current_user.get("nama", "")).strip()
+        current_pptk_uname = str(current_user.get("user_name") or current_user.get("username", "")).strip()
+        current_pptk_label = f"{current_pptk_nama} ({current_pptk_uname})" if current_pptk_uname else current_pptk_nama
+        if current_pptk_label not in pptk_opts:
+            pptk_opts = [current_pptk_label] + pptk_opts
+        pptk_default = current_pptk_label
 
     if pptk_opts:
         try:
@@ -685,7 +695,7 @@ with st.sidebar:
         else:
             st.caption(f"Data ditampilkan untuk: **{pptk_selected}**")
     else:
-        st.info("Belum ada data PPTK.")
+        st.info("Belum ada data PPTK di master pengguna.")
         st.session_state.pptk_filter = None
 
     if st.button("Logout"):
