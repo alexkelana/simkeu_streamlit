@@ -230,7 +230,9 @@ def find_username_column(df: pd.DataFrame) -> str | None:
 def format_rupiah(n):
     try:
         n = float(n)
-        return f"Rp {n:,.0f}".replace(",", ".")
+        if n < 0:
+            return f"(Rp {abs(n):,.0f})"
+        return f"Rp {n:,.0f}"
     except Exception:
         return "-"
 

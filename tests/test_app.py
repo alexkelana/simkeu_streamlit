@@ -43,10 +43,13 @@ from app import format_rupiah, is_manager  # noqa: E402
 
 class TestFormatRupiah:
     def test_format_rupiah_basic(self):
-        assert format_rupiah(1000000) == "Rp 1.000.000"
+        assert format_rupiah(1000000) == "Rp 1,000,000"
 
     def test_format_rupiah_zero(self):
         assert format_rupiah(0) == "Rp 0"
+
+    def test_format_rupiah_negative(self):
+        assert format_rupiah(-500000) == "(Rp 500,000)"
 
     def test_format_rupiah_invalid(self):
         assert format_rupiah("abc") == "-"
