@@ -282,6 +282,12 @@ def export_to_pdf(df: pd.DataFrame, nama_file: str = "laporan_simkeu.pdf") -> by
     elements.append(Paragraph(f"Total Data: {len(df)} baris", styles["Normal"]))
     elements.append(Paragraph("<br/><br/>", styles["Normal"]))
 
+    # Cek apakah data kosong
+    if df is None or df.empty or len(df.columns) == 0:
+        elements.append(Paragraph("Tidak ada data untuk diekspor.", styles["Normal"]))
+        doc.build(elements)
+        return buffer.getvalue()
+
     data = [df.columns.tolist()] + df.values.tolist()
     table = Table(data, repeatRows=1)
     table.setStyle(TableStyle([
