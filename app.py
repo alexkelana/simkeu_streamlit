@@ -298,6 +298,9 @@ def export_to_pdf(df: pd.DataFrame, nama_file: str = "laporan_simkeu.pdf") -> by
 
 # ===================== CETAK SPJ / SURAT (P3) =====================
 
+def is_manager(peran: str) -> bool:
+    return str(peran).upper() in ("ADMIN", "KASUBAG_PEK")
+
 def generate_spj_document(transaksi_row: pd.Series) -> bytes:
     """Generate dokumen SPJ (Surat Pertanggungjawaban) dalam format PDF."""
     if not REPORTLAB_AVAILABLE:
@@ -340,9 +343,6 @@ def generate_spj_document(transaksi_row: pd.Series) -> bytes:
 
     doc.build(elements)
     return buffer.getvalue()
-
-def is_manager(peran: str) -> bool:
-    return str(peran).upper() in ("ADMIN", "KASUBAG_PEK")
 
 def get_subkegiatan_full(subkode: str, df: pd.DataFrame) -> str:
     """Label lengkap: kode - nama."""
@@ -823,86 +823,6 @@ if menu == "Transaksi":
 
         st.caption(f"Menampilkan {len(df_show)} dari {len(df_transaksi)} transaksi")
         st.dataframe(format_df_rupiah(df_show), use_container_width=True, hide_index=True)
-
-        st.divider()
-        st.markdown("### Aksi Transaksi (Hanya Manager: ADMIN / KASUBAG_PEK)")
-
-        col_no, col_action = st.columns([2, 3])
-        with col_no:
-            target_no = st.number_input("Nomor Transaksi (NO)", min_value=1, step=1)
-        with col_action:
-            aksi = st.selectbox("Pilih Aksi", ["Setujui", "Tolak", "Edit", "Hapus", "Cetak SPJ"])
-
-        if aksi in ("Setujui", "Tolak"):
-            status_baru = "Disetujui" if aksi == "Setujui" else "Ditolak"
-            if st.button(f"{aksi} Transaksi", type="primary"):
-                pptk_nama = current_user.get("nama", "Admin")
-                ok = update_transaksi_status(int(target_no), status_baru, pptk_nama)
-                if ok:
-                    st.success(f"Transaksi No {target_no} berhasil {status_baru.lower()}.")
-                    try:
-                        row = df_transaksi[pd.to_numeric(df_transaksi["NO"], errors="coerce") == int(target_no)]
-                        if not row.empty:
-                            r = row.iloc[0]
-                            pesan = (
-                                f"📋 <b>Transaksi {status_baru}</b>\n"
-                                f"No: {target_no}\n"
-                                f"Sub Kegiatan: {r.get('SUB KEGIATAN', '-')}\n"
-                                f"Nominal: {format_rupiah(r.get('NOMINAL', 0))}\n"
-                                f"Oleh: {pptk_nama}"
-                            )
-                            send_telegram(pesan)
-                    except Exception:
-                        pass
-                    st.rerun()
-                else:
-                    st.error("Gagal mengubah status transaksi.")
-
-        elif aksi == "Edit":
-            with st.form("form_edit_transaksi"):
-                new_uraian = st.text_input("Uraian baru")
-                new_nominal = st.number_input("Nominal baru", min_value=0, step=1000)
-                if st.form_submit_button("Simpan Perubahan"):
-                    new_data = {"URAIAN": new_uraian, "NOMINAL": new_nominal}
-                    ok = edit_transaksi(int(target_no), new_data)
-                    if ok:
-                        st.success(f"Transaksi No {target_no} berhasil diupdate.")
-                        st.rerun()
-                    else:
-                        st.error("Gagal mengedit transaksi.")
-
-        elif aksi == "Hapus":
-            st.warning("⚠️ Aksi ini tidak dapat dibatalkan.")
-            konfirmasi = st.checkbox("Saya yakin ingin menghapus transaksi ini.")
-            if st.button("Hapus Transaksi", type="secondary"):
-                if not konfirmasi:
-                    st.error("Centang konfirmasi terlebih dahulu.")
-                else:
-                    ok = delete_transaksi(int(target_no))
-                    if ok:
-                        st.success(f"Transaksi No {target_no} berhasil dihapus.")
-                        st.rerun()
-                    else:
-                        st.error("Gagal menghapus transaksi.")
-
-        elif aksi == "Cetak SPJ":
-            st.markdown("### Cetak Surat Pertanggungjawaban (SPJ)")
-            row = df_transaksi[pd.to_numeric(df_transaksi["NO"], errors="coerce") == int(target_no)]
-            if not row.empty:
-                r = row.iloc[0]
-                st.info(f"SPJ untuk Transaksi No {target_no}")
-                if REPORTLAB_AVAILABLE:
-                    spj_bytes = generate_spj_document(r)
-                    st.download_button(
-                        label="⬇️ Unduh SPJ (PDF)",
-                        data=spj_bytes,
-                        file_name=f"SPJ_No{target_no}.pdf",
-                        mime="application/pdf",
-                    )
-                else:
-                    st.warning("Library reportlab tidak terinstal. Tidak dapat generate PDF.")
-            else:
-                st.error("Transaksi tidak ditemukan.")
     else:
         st.info("Belum ada transaksi.")
 
