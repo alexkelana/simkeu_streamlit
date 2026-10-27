@@ -230,9 +230,10 @@ def find_username_column(df: pd.DataFrame) -> str | None:
 def format_rupiah(n):
     try:
         n = float(n)
+        # Format dengan koma sebagai pemisah ribuan, lalu ganti menjadi titik (format Indonesia)
         if n < 0:
-            return f"(Rp {abs(n):,.0f})"
-        return f"Rp {n:,.0f}"
+            return f"(Rp {abs(n):,.0f})".replace(",", ".")
+        return f"Rp {n:,.0f}".replace(",", ".")
     except Exception:
         return "-"
 
