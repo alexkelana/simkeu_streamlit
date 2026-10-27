@@ -933,7 +933,38 @@ elif menu == "Dashboard":
 
     st.subheader("Sub Kegiatan")
     if not df_kegiatan.empty:
-        st.dataframe(format_df_rupiah(df_kegiatan), use_container_width=True, hide_index=True)
+        df_kegiatan_display = df_kegiatan.copy()
+        if not df_transaksi.empty and nominal_col:
+            df_transaksi_copy = df_transaksi.copy()
+            df_transaksi_copy[NOMINAL_COL_FOR_DASH] = pd.to_numeric(
+                df_transaksi_copy[nominal_col], errors="coerce"
+            ).fillna(0)
+            df_transaksi_copy["subkode"] = df_transaksi_copy["SUB KEGIATAN"].astype(str).str.split(" - ").str[0]
+            realisasi_per_sub = (
+                df_transaksi_copy.groupby("subkode")[NOMINAL_COL_FOR_DASH]
+                .sum()
+                .reset_index()
+            )
+            realisasi_per_sub.columns = ["subkegiatan", "realisasi"]
+            df_kegiatan_display = df_kegiatan_display.merge(
+                realisasi_per_sub, on="subkegiatan", how="left"
+            )
+            df_kegiatan_display["realisasi"] = df_kegiatan_display["realisasi"].fillna(0)
+            df_kegiatan_display["sisa_pagu"] = (
+                pd.to_numeric(df_kegiatan_display["pagu_awal"], errors="coerce").fillna(0)
+                - df_kegiatan_display["realisasi"]
+            )
+            df_kegiatan_display = df_kegiatan_display[
+                ["subkegiatan", "nama_kegiatan", "pagu_awal", "realisasi", "sisa_pagu"]
+            ]
+            df_kegiatan_display.columns = [
+                "Kode", "Nama Kegiatan", "Pagu Awal", "Realisasi", "Sisa Pagu"
+            ]
+            for col in ["Pagu Awal", "Realisasi", "Sisa Pagu"]:
+                df_kegiatan_display[col] = df_kegiatan_display[col].apply(format_rupiah)
+        else:
+            df_kegiatan_display = format_df_rupiah(df_kegiatan)
+        st.dataframe(df_kegiatan_display, use_container_width=True, hide_index=True)
     else:
         st.info("Belum ada data sub kegiatan.")
 
