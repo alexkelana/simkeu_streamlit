@@ -1008,16 +1008,63 @@ elif menu == "Dashboard":
                 with col_app1:
                     app_no = st.number_input("Nomor Transaksi", min_value=1, step=1, key="app_no")
                 with col_app2:
-                    app_aksi = st.selectbox("Aksi", ["Setujui", "Tolak"], key="app_aksi")
-                if st.button("Proses Approval", type="primary"):
-                    pptk_nama = current_user.get("nama", "Admin")
-                    status_baru = "Disetujui" if app_aksi == "Setujui" else "Ditolak"
-                    ok = update_transaksi_status(int(app_no), status_baru, pptk_nama)
-                    if ok:
-                        st.success(f"Transaksi No {app_no} berhasil {status_baru.lower()}.")
-                        st.rerun()
+                    app_aksi = st.selectbox("Aksi", ["Setujui", "Tolak", "Edit", "Hapus", "Cetak SPJ"], key="app_aksi")
+
+                if app_aksi in ("Setujui", "Tolak"):
+                    if st.button(f"{app_aksi} Transaksi", type="primary"):
+                        pptk_nama = current_user.get("nama", "Admin")
+                        status_baru = "Disetujui" if app_aksi == "Setujui" else "Ditolak"
+                        ok = update_transaksi_status(int(app_no), status_baru, pptk_nama)
+                        if ok:
+                            st.success(f"Transaksi No {app_no} berhasil {status_baru.lower()}.")
+                            st.rerun()
+                        else:
+                            st.error("Gagal memproses approval.")
+
+                elif app_aksi == "Edit":
+                    with st.form("form_edit_dashboard"):
+                        new_uraian = st.text_input("Uraian baru")
+                        new_nominal = st.number_input("Nominal baru", min_value=0, step=1000)
+                        if st.form_submit_button("Simpan Perubahan"):
+                            new_data = {"URAIAN": new_uraian, "NOMINAL": new_nominal}
+                            ok = edit_transaksi(int(app_no), new_data)
+                            if ok:
+                                st.success(f"Transaksi No {app_no} berhasil diupdate.")
+                                st.rerun()
+                            else:
+                                st.error("Gagal mengedit transaksi.")
+
+                elif app_aksi == "Hapus":
+                    st.warning("⚠️ Aksi ini tidak dapat dibatalkan.")
+                    konfirmasi = st.checkbox("Saya yakin ingin menghapus transaksi ini.", key="hapus_conf")
+                    if st.button("Hapus Transaksi", type="secondary"):
+                        if not konfirmasi:
+                            st.error("Centang konfirmasi terlebih dahulu.")
+                        else:
+                            ok = delete_transaksi(int(app_no))
+                            if ok:
+                                st.success(f"Transaksi No {app_no} berhasil dihapus.")
+                                st.rerun()
+                            else:
+                                st.error("Gagal menghapus transaksi.")
+
+                elif app_aksi == "Cetak SPJ":
+                    row = df_transaksi[pd.to_numeric(df_transaksi["NO"], errors="coerce") == int(app_no)]
+                    if not row.empty:
+                        r = row.iloc[0]
+                        st.info(f"SPJ untuk Transaksi No {app_no}")
+                        if REPORTLAB_AVAILABLE:
+                            spj_bytes = generate_spj_document(r)
+                            st.download_button(
+                                label="⬇️ Unduh SPJ (PDF)",
+                                data=spj_bytes,
+                                file_name=f"SPJ_No{app_no}.pdf",
+                                mime="application/pdf",
+                            )
+                        else:
+                            st.warning("Library reportlab tidak terinstal. Tidak dapat generate PDF.")
                     else:
-                        st.error("Gagal memproses approval.")
+                        st.error("Transaksi tidak ditemukan.")
             else:
                 st.info("✅ Tidak ada transaksi yang menunggu approval.")
         else:
