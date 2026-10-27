@@ -1017,6 +1017,163 @@ elif menu == "Dashboard":
     else:
         st.info("Belum ada transaksi.")
 
+    # ===================== FITUR KASUBAG (Hanya ADMIN / KASUBAG_PEK) =====================
+    if is_manager(current_user.get("peran", "")):
+        st.divider()
+        st.markdown("## 📊 Dashboard Manajerial (Kasubag)")
+
+        # ---- 1. Ringkasan Realisasi per PPTK ----
+        st.subheader("1. Ringkasan Realisasi per PPTK")
+        if not df_transaksi.empty and nominal_col and "PPTK" in df_transaksi.columns:
+            df_transaksi_copy = df_transaksi.copy()
+            df_transaksi_copy[NOMINAL_COL_FOR_DASH] = pd.to_numeric(
+                df_transaksi_copy[nominal_col], errors="coerce"
+            ).fillna(0)
+            df_pptk_summary = (
+                df_transaksi_copy.groupby("PPTK")[NOMINAL_COL_FOR_DASH]
+                .sum()
+                .reset_index()
+            )
+            df_pptk_summary.columns = ["PPTK", "Realisasi"]
+            df_pptk_summary = df_pptk_summary.sort_values("Realisasi", ascending=False)
+            df_pptk_summary["Realisasi"] = df_pptk_summary["Realisasi"].apply(format_rupiah)
+            st.dataframe(df_pptk_summary, use_container_width=True, hide_index=True)
+        else:
+            st.info("Belum ada data transaksi untuk ditampilkan per PPTK.")
+
+        # ---- 2. Peringatan Pagu Melebihi (≥90%) ----
+        st.subheader("2. Peringatan Pagu Melebihi (≥90%)")
+        if not df_kegiatan.empty and not df_transaksi.empty and "pagu_awal" in df_kegiatan.columns and nominal_col:
+            df_kegiatan_copy = df_kegiatan.copy()
+            df_kegiatan_copy["pagu_awal"] = pd.to_numeric(df_kegiatan_copy["pagu_awal"], errors="coerce").fillna(0)
+            df_transaksi_copy = df_transaksi.copy()
+            df_transaksi_copy[NOMINAL_COL_FOR_DASH] = pd.to_numeric(
+                df_transaksi_copy[nominal_col], errors="coerce"
+            ).fillna(0)
+            # Ambil kode sub kegiatan dari kolom "SUB KEGIATAN" (format: "KODE - Nama")
+            df_transaksi_copy["subkode"] = df_transaksi_copy["SUB KEGIATAN"].astype(str).str.split(" - ").str[0]
+            realisasi_per_sub = (
+                df_transaksi_copy.groupby("subkode")[NOMINAL_COL_FOR_DASH]
+                .sum()
+                .reset_index()
+            )
+            realisasi_per_sub.columns = ["subkegiatan", "realisasi"]
+            df_alert = df_kegiatan_copy.merge(realisasi_per_sub, on="subkegiatan", how="left")
+            df_alert["realisasi"] = df_alert["realisasi"].fillna(0)
+            df_alert["persen"] = (df_alert["realisasi"] / df_alert["pagu_awal"] * 100).fillna(0)
+            df_over = df_alert[df_alert["persen"] >= 90].copy()
+            if not df_over.empty:
+                df_over_display = df_over[["subkegiatan", "nama_kegiatan", "pagu_awal", "realisasi", "persen"]].copy()
+                df_over_display.columns = ["Kode", "Nama Kegiatan", "Pagu", "Realisasi", "% Pakai"]
+                df_over_display["Pagu"] = df_over_display["Pagu"].apply(format_rupiah)
+                df_over_display["Realisasi"] = df_over_display["Realisasi"].apply(format_rupiah)
+                df_over_display["% Pakai"] = df_over_display["% Pakai"].apply(lambda x: f"{x:.1f}%")
+                st.warning(f"⚠️ Ditemukan {len(df_over_display)} sub kegiatan yang pagunya telah mencapai ≥90%!")
+                st.dataframe(df_over_display, use_container_width=True, hide_index=True)
+            else:
+                st.info("✅ Tidak ada sub kegiatan yang melebihi 90% pagu.")
+        else:
+            st.info("Data pagu atau transaksi tidak cukup untuk peringatan over budget.")
+
+        # ---- 3. Antrian Menunggu Approval ----
+        st.subheader("3. Antrian Transaksi Menunggu Approval")
+        if not df_transaksi.empty and "STATUS" in df_transaksi.columns:
+            df_pending = df_transaksi[df_transaksi["STATUS"].astype(str).isin(["Draft", "Menunggu Approval"])]
+            if not df_pending.empty:
+                df_pending_display = df_pending[["NO", "SUB KEGIATAN", "PPTK", "NOMINAL", "TANGGAL PENGAJUAN", "STATUS", "URAIAN"]].copy()
+                df_pending_display["NOMINAL"] = df_pending_display["NOMINAL"].apply(format_rupiah)
+                st.dataframe(df_pending_display, use_container_width=True, hide_index=True)
+                st.markdown("### Aksi Approval")
+                col_app1, col_app2 = st.columns(2)
+                with col_app1:
+                    app_no = st.number_input("Nomor Transaksi", min_value=1, step=1, key="app_no")
+                with col_app2:
+                    app_aksi = st.selectbox("Aksi", ["Setujui", "Tolak"], key="app_aksi")
+                if st.button("Proses Approval", type="primary"):
+                    pptk_nama = current_user.get("nama", "Admin")
+                    status_baru = "Disetujui" if app_aksi == "Setujui" else "Ditolak"
+                    ok = update_transaksi_status(int(app_no), status_baru, pptk_nama)
+                    if ok:
+                        st.success(f"Transaksi No {app_no} berhasil {status_baru.lower()}.")
+                        st.rerun()
+                    else:
+                        st.error("Gagal memproses approval.")
+            else:
+                st.info("✅ Tidak ada transaksi yang menunggu approval.")
+        else:
+            st.info("Data transaksi tidak tersedia.")
+
+        # ---- 4. Tren Realisasi Bulanan ----
+        st.subheader("4. Tren Realisasi Bulanan")
+        if not df_transaksi.empty and nominal_col and "TANGGAL PENGAJUAN" in df_transaksi.columns:
+            df_trend = df_transaksi.copy()
+            df_trend[NOMINAL_COL_FOR_DASH] = pd.to_numeric(
+                df_trend[nominal_col], errors="coerce"
+            ).fillna(0)
+            df_trend["bulan"] = pd.to_datetime(
+                df_trend["TANGGAL PENGAJUAN"], format="%d/%m/%Y", errors="coerce"
+            ).dt.strftime("%m/%Y")
+            trend_monthly = (
+                df_trend.groupby("bulan")[NOMINAL_COL_FOR_DASH]
+                .sum()
+                .reset_index()
+            )
+            trend_monthly.columns = ["Bulan", "Realisasi"]
+            trend_monthly = trend_monthly.sort_values("Bulan")
+            if not trend_monthly.empty:
+                st.line_chart(trend_monthly.set_index("Bulan")["Realisasi"])
+            else:
+                st.info("Belum ada data tren bulanan.")
+        else:
+            st.info("Data transaksi atau tanggal tidak cukup untuk tren bulanan.")
+
+        # ---- 5. Perbandingan Target vs Realisasi ----
+        st.subheader("5. Perbandingan Target vs Realisasi per Sub Kegiatan")
+        if not df_kegiatan.empty and not df_transaksi.empty and "pagu_awal" in df_kegiatan.columns and nominal_col:
+            df_compare = df_kegiatan.copy()
+            df_compare["pagu_awal"] = pd.to_numeric(df_compare["pagu_awal"], errors="coerce").fillna(0)
+            df_transaksi_copy = df_transaksi.copy()
+            df_transaksi_copy[NOMINAL_COL_FOR_DASH] = pd.to_numeric(
+                df_transaksi_copy[nominal_col], errors="coerce"
+            ).fillna(0)
+            df_transaksi_copy["subkode"] = df_transaksi_copy["SUB KEGIATAN"].astype(str).str.split(" - ").str[0]
+            realisasi_per_sub = (
+                df_transaksi_copy.groupby("subkode")[NOMINAL_COL_FOR_DASH]
+                .sum()
+                .reset_index()
+            )
+            realisasi_per_sub.columns = ["subkegiatan", "realisasi"]
+            df_compare = df_compare.merge(realisasi_per_sub, on="subkegiatan", how="left")
+            df_compare["realisasi"] = df_compare["realisasi"].fillna(0)
+            df_compare_display = df_compare[["subkegiatan", "nama_kegiatan", "pagu_awal", "realisasi"]].copy()
+            df_compare_display.columns = ["Kode", "Nama Kegiatan", "Target (Pagu)", "Realisasi"]
+            df_compare_display["Target (Pagu)"] = df_compare_display["Target (Pagu)"].apply(format_rupiah)
+            df_compare_display["Realisasi"] = df_compare_display["Realisasi"].apply(format_rupiah)
+            st.dataframe(df_compare_display, use_container_width=True, hide_index=True)
+        else:
+            st.info("Data pagu atau transaksi tidak cukup untuk perbandingan target vs realisasi.")
+
+        # ---- 6. Peringkat PPTK Berdasarkan Realisasi ----
+        st.subheader("6. Peringkat PPTK Berdasarkan Realisasi")
+        if not df_transaksi.empty and nominal_col and "PPTK" in df_transaksi.columns:
+            df_transaksi_copy = df_transaksi.copy()
+            df_transaksi_copy[NOMINAL_COL_FOR_DASH] = pd.to_numeric(
+                df_transaksi_copy[nominal_col], errors="coerce"
+            ).fillna(0)
+            df_rank = (
+                df_transaksi_copy.groupby("PPTK")[NOMINAL_COL_FOR_DASH]
+                .sum()
+                .reset_index()
+            )
+            df_rank.columns = ["PPTK", "Total Realisasi"]
+            df_rank = df_rank.sort_values("Total Realisasi", ascending=False)
+            df_rank["Peringkat"] = range(1, len(df_rank) + 1)
+            df_rank["Total Realisasi"] = df_rank["Total Realisasi"].apply(format_rupiah)
+            df_rank = df_rank[["Peringkat", "PPTK", "Total Realisasi"]]
+            st.dataframe(df_rank, use_container_width=True, hide_index=True)
+        else:
+            st.info("Belum ada data PPTK untuk ditampilkan dalam peringkat.")
+
 # ===================== PERUBAHAN PAGU =====================
 elif menu == "Perubahan Pagu":
     # Lazy load data yang dibutuhkan menu Perubahan Pagu
