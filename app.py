@@ -23,7 +23,7 @@ except Exception:
     OPENPYXL_AVAILABLE = False
 
 try:
-    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.pagesizes import A4, landscape
     from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
     from reportlab.lib.styles import getSampleStyleSheet
     from reportlab.lib import colors
@@ -267,20 +267,30 @@ def export_to_excel(df: pd.DataFrame, nama_file: str = "laporan_simkeu.xlsx") ->
     return output.getvalue()
 
 def export_to_pdf(df: pd.DataFrame, nama_file: str = "laporan_simkeu.pdf") -> bytes:
-    """Export DataFrame ke PDF (bytes)."""
+    """Export DataFrame ke PDF (bytes) dengan orientasi landscape."""
     if not REPORTLAB_AVAILABLE:
         return b""
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(A4))
     styles = getSampleStyleSheet()
-    elements = [Paragraph("Laporan SIMKEU Kecamatan Candisari 2027", styles["Title"])]
+    elements = []
+
+    # Judul
+    elements.append(Paragraph("LAPORAN TRANSAKSI SIMKEU", styles["Title"]))
+    elements.append(Paragraph("Kecamatan Candisari 2027", styles["Heading2"]))
+    elements.append(Paragraph(f"Tanggal Cetak: {date.today().strftime('%d/%m/%Y')}", styles["Normal"]))
+    elements.append(Paragraph(f"Total Data: {len(df)} baris", styles["Normal"]))
+    elements.append(Paragraph("<br/><br/>", styles["Normal"]))
+
     data = [df.columns.tolist()] + df.values.tolist()
-    table = Table(data)
+    table = Table(data, repeatRows=1)
     table.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
         ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
         ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
         ("FONTSIZE", (0, 0), (-1, -1), 7),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("ALIGN", (0, 0), (-1, -1), "LEFT"),
     ]))
     elements.append(table)
     doc.build(elements)
