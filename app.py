@@ -832,8 +832,7 @@ if menu == "Transaksi":
 
         # Terapkan filter PPTK
         pptk_filter = st.session_state.get("pptk_filter")
-        user_peran = str(current_user.get("peran", "")).upper()
-        if pptk_filter and pptk_filter != "Semua PPTK" and user_peran not in ("ADMIN", "KASUBAG_PEK"):
+        if pptk_filter and pptk_filter != "Semua PPTK":
             df_show = df_show[df_show["PPTK"].astype(str) == pptk_filter]
 
         st.caption(f"Menampilkan {len(df_show)} dari {len(df_transaksi)} transaksi")
@@ -929,8 +928,7 @@ elif menu == "Dashboard":
     
     # Terapkan filter PPTK di Dashboard
     pptk_filter = st.session_state.get("pptk_filter")
-    user_peran = str(current_user.get("peran", "")).upper()
-    if pptk_filter and pptk_filter != "Semua PPTK" and user_peran not in ("ADMIN", "KASUBAG_PEK"):
+    if pptk_filter and pptk_filter != "Semua PPTK":
         df_transaksi = df_transaksi[df_transaksi["PPTK"].astype(str) == pptk_filter]
     
     st.header("Dashboard")
