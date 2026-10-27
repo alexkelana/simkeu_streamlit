@@ -236,6 +236,24 @@ def format_rupiah(n):
     except Exception:
         return "-"
 
+def format_df_rupiah(df: pd.DataFrame) -> pd.DataFrame:
+    """Format kolom nominal/angka dalam DataFrame ke format accounting rupiah."""
+    if df is None or df.empty:
+        return df
+    df = df.copy()
+    # Kolom yang berisi nominal/angka uang
+    nominal_cols = [
+        "NOMINAL", "nilai", "Nominal",
+        "pagu_awal", "PAGU_AWAL", "Pagu Awal",
+        "PAGU_BARU", "Pagu Baru",
+        "SISA", "Sisa",
+        "REALISASI", "Realisasi",
+    ]
+    for col in nominal_cols:
+        if col in df.columns:
+            df[col] = df[col].apply(format_rupiah)
+    return df
+
 # ===================== EXPORT EXCEL / PDF (Reporting & Notifikasi P2) =====================
 
 def export_to_excel(df: pd.DataFrame, nama_file: str = "laporan_simkeu.xlsx") -> bytes:
@@ -793,7 +811,7 @@ if menu == "Transaksi":
             df_show = df_show[df_show["PPTK"].astype(str) == pptk_filter]
 
         st.caption(f"Menampilkan {len(df_show)} dari {len(df_transaksi)} transaksi")
-        st.dataframe(df_show, use_container_width=True, hide_index=True)
+        st.dataframe(format_df_rupiah(df_show), use_container_width=True, hide_index=True)
 
         st.divider()
         st.markdown("### Aksi Transaksi (Hanya Manager: ADMIN / KASUBAG_PEK)")
@@ -974,13 +992,13 @@ elif menu == "Dashboard":
 
     st.subheader("Sub Kegiatan")
     if not df_kegiatan.empty:
-        st.dataframe(df_kegiatan, use_container_width=True, hide_index=True)
+        st.dataframe(format_df_rupiah(df_kegiatan), use_container_width=True, hide_index=True)
     else:
         st.info("Belum ada data sub kegiatan.")
 
     st.subheader("Transaksi Terbaru")
     if not df_transaksi.empty:
-        st.dataframe(df_transaksi, use_container_width=True, hide_index=True)
+        st.dataframe(format_df_rupiah(df_transaksi), use_container_width=True, hide_index=True)
     else:
         st.info("Belum ada transaksi.")
 
@@ -1031,7 +1049,7 @@ elif menu == "Perubahan Pagu":
     st.divider()
     st.subheader("Daftar Perubahan Pagu")
     if not df_perubahan.empty:
-        st.dataframe(df_perubahan, use_container_width=True, hide_index=True)
+        st.dataframe(format_df_rupiah(df_perubahan), use_container_width=True, hide_index=True)
     else:
         st.info("Belum ada data perubahan pagu.")
 
@@ -1072,7 +1090,7 @@ elif menu == "Master Data":
     with tab2:
         st.subheader("Data Sub Kegiatan")
         if not df_kegiatan.empty:
-            st.dataframe(df_kegiatan, use_container_width=True, hide_index=True)
+            st.dataframe(format_df_rupiah(df_kegiatan), use_container_width=True, hide_index=True)
             st.divider()
             with st.form("form_add_kegiatan"):
                 st.markdown("**Tambah Sub Kegiatan**")
