@@ -174,6 +174,7 @@ def update_sheet_data(worksheet_name: str, df: pd.DataFrame) -> bool:
             conn = get_conn()
             conn.update(spreadsheet=SPREADSHEET_URL, worksheet=worksheet_name, data=df)
             st.cache_resource.clear()
+            st.cache_data.clear()  # Bersihkan cache data agar perubahan langsung terlihat
             return True
     except Exception:
         pass
