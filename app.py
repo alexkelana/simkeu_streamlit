@@ -595,19 +595,80 @@ def edit_transaksi(no: int, new_data: dict) -> bool:
     return ok
 
 # ===================== LOAD DATA =====================
-with st.spinner("Memuat data dari Google Sheets..."):
-    df_pengguna = load_sheet("PENGGUNA")
-    df_wilayah = load_sheet("MASTER_WILAYAH")
-    df_rekening = load_sheet("MASTER_REKENING")
-    df_kegiatan = load_sheet("MASTER_KEGIATAN")
-    df_transaksi = load_sheet("TRANSAKSI")
-    df_perubahan = load_sheet("PERUBAHAN_PAGU")
 
-    # Pastikan kolom STATUS ada (untuk approval transaksi)
-    if not df_transaksi.empty and "STATUS" not in df_transaksi.columns:
-        df_transaksi["STATUS"] = "Draft"
-        df_transaksi["DISETUJUI_OLEH"] = ""
-        df_transaksi["TANGGAL_APPROVAL"] = ""
+# --- Animasi Loading Kustom dengan Progress Bar ---
+st.markdown(
+    """
+    <style>
+    .stProgress > div > div > div > div {
+        background-color: #1f77b4;
+    }
+    .loading-container {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 1.5rem;
+        border-radius: 10px;
+        margin: 1rem 0;
+        color: white;
+    }
+    .loading-title {
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .loading-sheet {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        margin-top: 0.5rem;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+loading_container = st.container()
+with loading_container:
+    st.markdown('<div class="loading-container">', unsafe_allow_html=True)
+    st.markdown('<div class="loading-title">🔄 Memuat Data SIMKEU</div>', unsafe_allow_html=True)
+    status_text = st.empty()
+    progress_bar = st.progress(0)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+sheet_list = [
+    ("PENGGUNA", "Data Pengguna"),
+    ("MASTER_WILAYAH", "Data Wilayah"),
+    ("MASTER_REKENING", "Data Rekening Belanja"),
+    ("MASTER_KEGIATAN", "Data Sub Kegiatan"),
+    ("TRANSAKSI", "Data Transaksi"),
+    ("PERUBAHAN_PAGU", "Data Perubahan Pagu"),
+]
+
+total_sheets = len(sheet_list)
+loaded_data = {}
+
+for i, (sheet_name, label) in enumerate(sheet_list):
+    status_text.markdown(f'<div class="loading-sheet">⏳ Memuat {label}...</div>', unsafe_allow_html=True)
+    loaded_data[sheet_name] = load_sheet(sheet_name)
+    progress_bar.progress((i + 1) / total_sheets)
+
+# Assign ke variabel df untuk kompatibilitas kode berikutnya
+df_pengguna = loaded_data["PENGGUNA"]
+df_wilayah = loaded_data["MASTER_WILAYAH"]
+df_rekening = loaded_data["MASTER_REKENING"]
+df_kegiatan = loaded_data["MASTER_KEGIATAN"]
+df_transaksi = loaded_data["TRANSAKSI"]
+df_perubahan = loaded_data["PERUBAHAN_PAGU"]
+
+# Pastikan kolom STATUS ada (untuk approval transaksi)
+if not df_transaksi.empty and "STATUS" not in df_transaksi.columns:
+    df_transaksi["STATUS"] = "Draft"
+    df_transaksi["DISETUJUI_OLEH"] = ""
+    df_transaksi["TANGGAL_APPROVAL"] = ""
+
+# Hapus container loading setelah selesai
+loading_container.empty()
 
 # ===================== LOGIN =====================
 if "logged_in" not in st.session_state:
