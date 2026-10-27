@@ -1029,7 +1029,7 @@ elif menu == "Dashboard":
             realisasi_per_sub.columns = ["subkegiatan", "realisasi"]
             chart_df = realisasi_per_sub.merge(df_merge, on="subkegiatan", how="left")
             chart_df["label"] = chart_df["subkegiatan"] + " — " + chart_df["nama_kegiatan"].fillna("")
-            st.bar_chart(chart_df.set_index("label")[NOMINAL_COL_FOR_DASH])
+            st.bar_chart(chart_df.set_index("label")["realisasi"])
         else:
             st.info("Data sub kegiatan tidak cukup untuk visualisasi.")
     else:
