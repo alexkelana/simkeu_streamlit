@@ -267,11 +267,18 @@ def export_to_excel(df: pd.DataFrame, nama_file: str = "laporan_simkeu.xlsx") ->
     return output.getvalue()
 
 def export_to_pdf(df: pd.DataFrame, nama_file: str = "laporan_simkeu.pdf") -> bytes:
-    """Export DataFrame ke PDF (bytes) dengan orientasi landscape."""
+    """Export DataFrame ke PDF (bytes) dengan orientasi landscape dan lebar kolom disesuaikan."""
     if not REPORTLAB_AVAILABLE:
         return b""
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=landscape(A4))
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=landscape(A4),
+        leftMargin=30,
+        rightMargin=30,
+        topMargin=30,
+        bottomMargin=30,
+    )
     styles = getSampleStyleSheet()
     elements = []
 
@@ -288,8 +295,33 @@ def export_to_pdf(df: pd.DataFrame, nama_file: str = "laporan_simkeu.pdf") -> by
         doc.build(elements)
         return buffer.getvalue()
 
+    # Siapkan data tabel
     data = [df.columns.tolist()] + df.values.tolist()
-    table = Table(data, repeatRows=1)
+
+    # Hitung lebar kolom agar tidak melebihi ukuran kertas
+    # Landscape A4 width = 842 pt, dengan margin kiri-kanan 30 pt = 782 pt tersedia
+    available_width = 782
+    n_cols = len(df.columns)
+    base_width = available_width / n_cols
+
+    # Hitung lebar kolom berdasarkan panjang konten maksimal
+    col_widths = []
+    for i, col in enumerate(df.columns):
+        # Hitung panjang teks terpanjang di kolom ini (termasuk header)
+        max_len = len(str(col))
+        for val in df[col].values:
+            max_len = max(max_len, len(str(val)))
+        # Lebar maksimum per kolom (batas bawah 40, atas 120)
+        col_w = max(40, min(120, max_len * 5))
+        col_widths.append(col_w)
+
+    # Normalisasi agar total tidak melebihi available_width
+    total_width = sum(col_widths)
+    if total_width > available_width:
+        scale = available_width / total_width
+        col_widths = [w * scale for w in col_widths]
+
+    table = Table(data, colWidths=col_widths, repeatRows=1)
     table.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
         ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
@@ -297,6 +329,8 @@ def export_to_pdf(df: pd.DataFrame, nama_file: str = "laporan_simkeu.pdf") -> by
         ("FONTSIZE", (0, 0), (-1, -1), 7),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+        ("TOPPADDING", (0, 0), (-1, -1), 3),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
     ]))
     elements.append(table)
     doc.build(elements)
