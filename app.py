@@ -1119,9 +1119,11 @@ elif menu == "Dashboard":
             df_compare = df_compare.merge(realisasi_per_sub, on="subkegiatan", how="left")
             df_compare["realisasi"] = df_compare["realisasi"].fillna(0)
             df_compare_display = df_compare[["subkegiatan", "nama_kegiatan", "pagu_awal", "realisasi"]].copy()
-            df_compare_display.columns = ["Kode", "Nama Kegiatan", "Target (Pagu)", "Realisasi"]
+            df_compare_display["sisa"] = df_compare_display["pagu_awal"] - df_compare_display["realisasi"]
+            df_compare_display.columns = ["Kode", "Nama Kegiatan", "Target (Pagu)", "Realisasi", "Sisa Pagu"]
             df_compare_display["Target (Pagu)"] = df_compare_display["Target (Pagu)"].apply(format_rupiah)
             df_compare_display["Realisasi"] = df_compare_display["Realisasi"].apply(format_rupiah)
+            df_compare_display["Sisa Pagu"] = df_compare_display["Sisa Pagu"].apply(format_rupiah)
             st.dataframe(df_compare_display, use_container_width=True, hide_index=True)
         else:
             st.info("Data pagu atau transaksi tidak cukup untuk perbandingan target vs realisasi.")
