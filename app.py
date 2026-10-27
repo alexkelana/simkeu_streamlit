@@ -33,7 +33,7 @@ except Exception:
     REPORTLAB_AVAILABLE = False
 
 # ===================== KONFIG =====================
-SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1YzcixnxXR7B5hHh4ffVkbyKlmPscH_v-tB8Gq9cai_s/edit"
+SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1MMi0ABevTztyCfuzje6JLqNFeYt9octD_GKA0R2Xic8/edit"
 
 st.set_page_config(
     page_title="SIMKEU Kecamatan Candisari 2027",
