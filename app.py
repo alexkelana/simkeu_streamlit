@@ -266,73 +266,187 @@ def export_to_excel(df: pd.DataFrame, nama_file: str = "laporan_simkeu.xlsx") ->
         df.to_excel(writer, index=False, sheet_name="Laporan")
     return output.getvalue()
 
-def export_to_pdf(df: pd.DataFrame, nama_file: str = "laporan_simkeu.pdf") -> bytes:
-    """Export DataFrame ke PDF (bytes) dengan orientasi landscape dan lebar kolom disesuaikan."""
+def export_to_pdf(
+    df_transaksi: pd.DataFrame = None,
+    df_kegiatan: pd.DataFrame = None,
+    total_pagu: float = 0,
+    total_realisasi: float = 0,
+    sisa: float = 0,
+    persen: float = 0,
+    nominal_col: str = None,
+    NOMINAL_COL_FOR_DASH: str = None,
+    nama_file: str = "laporan_simkeu.pdf",
+) -> bytes:
+    """Export seluruh informasi dashboard ke PDF (landscape A4) dengan text wrapping."""
     if not REPORTLAB_AVAILABLE:
         return b""
+
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
         buffer,
         pagesize=landscape(A4),
-        leftMargin=30,
-        rightMargin=30,
-        topMargin=30,
-        bottomMargin=30,
+        leftMargin=25,
+        rightMargin=25,
+        topMargin=25,
+        bottomMargin=25,
+        title="Laporan SIMKEU Kecamatan Candisari 2027",
+        author="SIMKEU",
     )
     styles = getSampleStyleSheet()
+
+    # Style untuk sel tabel dengan text wrapping
+    cell_style = ParagraphStyle(
+        "CellStyle",
+        parent=styles["Normal"],
+        fontSize=7,
+        leading=8,
+        alignment=0,  # LEFT
+    )
+    cell_style_bold = ParagraphStyle(
+        "CellStyleBold",
+        parent=cell_style,
+        fontName="Helvetica-Bold",
+    )
+    header_style = ParagraphStyle(
+        "HeaderStyle",
+        parent=styles["Normal"],
+        fontName="Helvetica-Bold",
+        fontSize=7.5,
+        leading=9,
+        alignment=0,
+        textColor=colors.whitesmoke,
+    )
+
     elements = []
 
-    # Judul
+    # ---------- Header ----------
     elements.append(Paragraph("LAPORAN TRANSAKSI SIMKEU", styles["Title"]))
     elements.append(Paragraph("Kecamatan Candisari 2027", styles["Heading2"]))
     elements.append(Paragraph(f"Tanggal Cetak: {date.today().strftime('%d/%m/%Y')}", styles["Normal"]))
-    elements.append(Paragraph(f"Total Data: {len(df)} baris", styles["Normal"]))
+    elements.append(Paragraph("Dibuat oleh: SIMKEU Sistem Manajemen Keuangan", styles["Normal"]))
     elements.append(Paragraph("<br/><br/>", styles["Normal"]))
 
-    # Cek apakah data kosong
-    if df is None or df.empty or len(df.columns) == 0:
-        elements.append(Paragraph("Tidak ada data untuk diekspor.", styles["Normal"]))
-        doc.build(elements)
-        return buffer.getvalue()
-
-    # Siapkan data tabel
-    data = [df.columns.tolist()] + df.values.tolist()
-
-    # Hitung lebar kolom agar tidak melebihi ukuran kertas
-    # Landscape A4 width = 842 pt, dengan margin kiri-kanan 30 pt = 782 pt tersedia
-    available_width = 782
-    n_cols = len(df.columns)
-    base_width = available_width / n_cols
-
-    # Hitung lebar kolom berdasarkan panjang konten maksimal
-    col_widths = []
-    for i, col in enumerate(df.columns):
-        # Hitung panjang teks terpanjang di kolom ini (termasuk header)
-        max_len = len(str(col))
-        for val in df[col].values:
-            max_len = max(max_len, len(str(val)))
-        # Lebar maksimum per kolom (batas bawah 40, atas 120)
-        col_w = max(40, min(120, max_len * 5))
-        col_widths.append(col_w)
-
-    # Normalisasi agar total tidak melebihi available_width
-    total_width = sum(col_widths)
-    if total_width > available_width:
-        scale = available_width / total_width
-        col_widths = [w * scale for w in col_widths]
-
-    table = Table(data, colWidths=col_widths, repeatRows=1)
-    table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+    # ---------- Ringkasan Eksekutif ----------
+    elements.append(Paragraph("1. Ringkasan Eksekutif", styles["Heading3"]))
+    summary_data = [
+        [Paragraph("Total Pagu", header_style), Paragraph(format_rupiah(total_pagu), cell_style_bold)],
+        [Paragraph("Total Realisasi", header_style), Paragraph(format_rupiah(total_realisasi), cell_style_bold)],
+        [Paragraph("Sisa Pagu", header_style), Paragraph(format_rupiah(sisa), cell_style_bold)],
+        [Paragraph("Persentase Realisasi", header_style), Paragraph(f"{persen:.1f}%", cell_style_bold)],
+    ]
+    summary_table = Table(summary_data, colWidths=[160, 300])
+    summary_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (0, -1), colors.lightgrey),
         ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
-        ("FONTSIZE", (0, 0), (-1, -1), 7),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("ALIGN", (0, 0), (-1, -1), "LEFT"),
         ("TOPPADDING", (0, 0), (-1, -1), 3),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
     ]))
-    elements.append(table)
+    elements.append(summary_table)
+    elements.append(Paragraph("<br/><br/>", styles["Normal"]))
+
+    # ---------- 2. Perbandingan Target vs Realisasi per Sub Kegiatan ----------
+    elements.append(Paragraph("2. Perbandingan Target vs Realisasi per Sub Kegiatan", styles["Heading3"]))
+    if df_kegiatan is not None and not df_kegiatan.empty and nominal_col and NOMINAL_COL_FOR_DASH:
+        df_compare = df_kegiatan.copy()
+        df_compare["pagu_awal"] = pd.to_numeric(df_compare["pagu_awal"], errors="coerce").fillna(0)
+        df_transaksi_calc = df_transaksi.copy() if df_transaksi is not None else pd.DataFrame()
+        if not df_transaksi_calc.empty:
+            df_transaksi_calc[NOMINAL_COL_FOR_DASH] = pd.to_numeric(
+                df_transaksi_calc[NOMINAL_COL_FOR_DASH], errors="coerce"
+            ).fillna(0)
+            df_transaksi_calc["subkode"] = df_transaksi_calc["SUB KEGIATAN"].astype(str).str.split(" - ").str[0]
+            realisasi_per_sub = (
+                df_transaksi_calc.groupby("subkode")[NOMINAL_COL_FOR_DASH]
+                .sum()
+                .reset_index()
+            )
+            realisasi_per_sub.columns = ["subkegiatan", "realisasi"]
+            df_compare = df_compare.merge(realisasi_per_sub, on="subkegiatan", how="left")
+            df_compare["realisasi"] = df_compare["realisasi"].fillna(0)
+        else:
+            df_compare["realisasi"] = 0
+
+        df_compare["sisa_pagu"] = df_compare["pagu_awal"] - df_compare["realisasi"]
+
+        # Header tabel
+        pdf_header = [
+            Paragraph("Kode", header_style),
+            Paragraph("Nama Kegiatan", header_style),
+            Paragraph("Pagu Awal", header_style),
+            Paragraph("Realisasi", header_style),
+            Paragraph("Sisa Pagu", header_style),
+        ]
+        pdf_data = [pdf_header]
+
+        for _, row in df_compare.iterrows():
+            pdf_data.append([
+                Paragraph(str(row.get("subkegiatan", "-")), cell_style),
+                Paragraph(str(row.get("nama_kegiatan", "-")), cell_style),
+                Paragraph(format_rupiah(row.get("pagu_awal", 0)), cell_style),
+                Paragraph(format_rupiah(row.get("realisasi", 0)), cell_style),
+                Paragraph(format_rupiah(row.get("sisa_pagu", 0)), cell_style),
+            ])
+
+        col_widths = [70, 220, 130, 130, 130]
+        compare_table = Table(pdf_data, colWidths=col_widths, repeatRows=1)
+        compare_table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("TOPPADDING", (0, 0), (-1, -1), 2),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+        ]))
+        elements.append(compare_table)
+    else:
+        elements.append(Paragraph("Data sub kegiatan tidak tersedia.", cell_style))
+    elements.append(Paragraph("<br/><br/>", styles["Normal"]))
+
+    # ---------- 3. Daftar Transaksi ----------
+    elements.append(Paragraph("3. Daftar Transaksi", styles["Heading3"]))
+    if df_transaksi is not None and not df_transaksi.empty:
+        df_show = df_transaksi.copy()
+        # Format kolom nominal
+        for col in ["NOMINAL", "nilai", "Nominal"]:
+            if col in df_show.columns:
+                df_show[col] = df_show[col].apply(format_rupiah)
+
+        # Pilih kolom yang akan diekspor
+        export_cols = [c for c in [
+            "NO", "SUB KEGIATAN", "KODE REKENING BELANJA",
+            "PENGELOMPOKAN BELANJA (#)", "URAIAN",
+            "JENIS TRANSAKSI (UP/GU/LS)", "NOMINAL",
+            "TANGGAL PENGAJUAN", "PPTK", "STATUS"
+        ] if c in df_show.columns]
+        df_show = df_show[export_cols]
+
+        pdf_header = [Paragraph(str(c), header_style) for c in df_show.columns]
+        pdf_data = [pdf_header]
+
+        for _, row in df_show.iterrows():
+            row_data = []
+            for c in df_show.columns:
+                row_data.append(Paragraph(str(row.get(c, "-")), cell_style))
+            pdf_data.append(row_data)
+
+        # Hitung lebar kolom dinamis
+        n_cols = len(df_show.columns)
+        available_width = 792  # landscape A4 minus margins
+        base_width = available_width / n_cols
+        col_widths = [max(50, min(160, base_width)) for _ in range(n_cols)]
+
+        trans_table = Table(pdf_data, colWidths=col_widths, repeatRows=1)
+        trans_table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("TOPPADDING", (0, 0), (-1, -1), 2),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+        ]))
+        elements.append(trans_table)
+    else:
+        elements.append(Paragraph("Tidak ada data transaksi.", cell_style))
+
     doc.build(elements)
     return buffer.getvalue()
 
@@ -921,7 +1035,16 @@ elif menu == "Dashboard":
             st.info("Library openpyxl tidak tersedia.")
     with e_col2:
         if REPORTLAB_AVAILABLE:
-            pdf_bytes = export_to_pdf(df_export)
+            pdf_bytes = export_to_pdf(
+                df_transaksi=df_export,
+                df_kegiatan=df_kegiatan,
+                total_pagu=total_pagu,
+                total_realisasi=total_realisasi,
+                sisa=sisa,
+                persen=persen,
+                nominal_col=nominal_col,
+                NOMINAL_COL_FOR_DASH=NOMINAL_COL_FOR_DASH,
+            )
             st.download_button(
                 label="⬇️ Unduh PDF",
                 data=pdf_bytes,
