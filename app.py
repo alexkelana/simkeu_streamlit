@@ -986,10 +986,16 @@ elif menu == "Dashboard":
     df_kegiatan = get_df("MASTER_KEGIATAN")
     df_transaksi = get_df("TRANSAKSI")
     
-    # Terapkan filter PPTK di Dashboard
+    # Terapkan filter PPTK ke data transaksi
     pptk_filter = st.session_state.get("pptk_filter")
+    user_peran = str(current_user.get("peran", "")).upper()
     if pptk_filter and pptk_filter != "Semua PPTK":
         df_transaksi = df_transaksi[df_transaksi["PPTK"].astype(str) == pptk_filter]
+        
+        # Untuk PPTK: filter df_kegiatan hanya ke sub-kegiatan yang memiliki transaksi dari PPTK tersebut
+        if user_peran not in ("ADMIN", "KASUBAG_PEK") and not df_transaksi.empty and "SUB KEGIATAN" in df_transaksi.columns and "subkegiatan" in df_kegiatan.columns:
+            subkode_terpakai = df_transaksi["SUB KEGIATAN"].astype(str).str.split(" - ").str[0].unique().tolist()
+            df_kegiatan = df_kegiatan[df_kegiatan["subkegiatan"].isin(subkode_terpakai)]
     
     st.header("Dashboard")
 
