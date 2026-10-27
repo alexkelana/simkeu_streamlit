@@ -18,7 +18,6 @@ from streamlit_gsheets import GSheetsConnection
 
 try:
     from openpyxl import Workbook
-    from openpyxl.utils.dataframe import dataframe_to_rows
     OPENPYXL_AVAILABLE = True
 except Exception:
     OPENPYXL_AVAILABLE = False
@@ -337,19 +336,6 @@ def get_rekening_full(kode: str, df: pd.DataFrame) -> str:
     if uraian:
         return f"{kode} — {uraian}"
     return str(kode)
-
-# ===================== BACKEND: CRUD MASTER DATA =====================
-
-def update_sheet_data(worksheet_name: str, df: pd.DataFrame) -> bool:
-    """Tulis ulang seluruh data worksheet ke Google Sheets."""
-    try:
-        conn = get_conn()
-        conn.update(spreadsheet=SPREADSHEET_URL, worksheet=worksheet_name, data=df)
-        st.cache_resource.clear()
-        return True
-    except Exception as e:
-        st.error(f"Gagal menulis ke sheet '{worksheet_name}': {e}")
-        return False
 
 # --- Master Rekening (pilot CRUD) ---
 def add_master_rekening(kode: str, uraian: str, user: str = "Sistem") -> bool:
