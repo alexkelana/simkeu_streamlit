@@ -43,6 +43,23 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# ===================== HIDE STREAMLIT UI CHROME =====================
+st.markdown(
+    """
+    <style>
+    /* Sembunyikan teks "running ..." dan toolbar kanan atas */
+    .stDeployButton { display: none !important; }
+    header[data-testid="stHeader"] { display: none !important; }
+    #MainMenu { visibility: hidden !important; }
+    footer { visibility: hidden !important; }
+    .stAppToolbar { visibility: hidden !important; }
+    /* Sembunyikan indikator running di pojok kanan atas */
+    div[data-testid="stStatusWidget"] { display: none !important; }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 # Inisialisasi dark mode toggle (session_state)
 if "dark_mode" not in st.session_state:
     st.session_state.dark_mode = False
