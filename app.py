@@ -617,6 +617,14 @@ if not st.session_state.logged_in:
                     if not user_row.empty:
                         st.session_state.current_user = user_row.iloc[0].to_dict()
                         st.session_state.logged_in = True
+                        # Inisialisasi filter PPTK otomatis setelah login
+                        user_peran_login = str(user_row.iloc[0].get("peran", "")).upper()
+                        if user_peran_login == "PPTK":
+                            nama_login = str(user_row.iloc[0].get("nama", "")).strip()
+                            uname_login = str(user_row.iloc[0].get("user_name") or user_row.iloc[0].get("username", "")).strip()
+                            st.session_state.pptk_filter = f"{nama_login} ({uname_login})" if uname_login else nama_login
+                        else:
+                            st.session_state.pptk_filter = "Semua PPTK"
                         st.rerun()
                     else:
                         st.error("User Name tidak ditemukan di sheet PENGGUNA.")
