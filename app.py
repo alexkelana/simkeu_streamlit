@@ -659,52 +659,13 @@ with st.sidebar:
         st.session_state.dark_mode = not st.session_state.dark_mode
         st.rerun()
 
-    # ---- Filter PPTK (per peran) ----
-    st.divider()
-    st.markdown("### 👤 Filter PPTK")
+    # ---- Filter PPTK (di-set otomatis saat login) ----
     user_peran = str(current_user.get("peran", "")).upper()
-
-    # Kumpulkan daftar PPTK dari sheet PENGGUNA (master pengguna)
-    pptk_opts = []
-    if not df_pengguna.empty and "peran" in df_pengguna.columns and "nama" in df_pengguna.columns:
-        df_pptk = df_pengguna[df_pengguna["peran"].astype(str).str.upper() == "PPTK"]
-        if not df_pptk.empty:
-            # Gabungkan nama dan username untuk ditampilkan
-            pptk_list = []
-            for _, row in df_pptk.iterrows():
-                nama = str(row.get("nama", "")).strip()
-                uname = str(row.get("user_name") or row.get("username", "")).strip()
-                label = f"{nama} ({uname})" if uname else nama
-                pptk_list.append(label)
-            pptk_opts = sorted(pptk_list)
-
-    if user_peran in ("ADMIN", "KASUBAG_PEK"):
-        # Admin dan Kasubag bisa melihat semua + opsi "Semua"
-        pptk_opts = ["Semua PPTK"] + pptk_opts
-        pptk_default = st.session_state.get("pptk_filter", "Semua PPTK")
+    pptk_filter = st.session_state.get("pptk_filter", "Semua PPTK")
+    if pptk_filter and pptk_filter != "Semua PPTK":
+        st.caption(f"🔒 Data ditampilkan untuk: **{pptk_filter}**")
     else:
-        # PPTK hanya bisa melihat dirinya sendiri
-        current_pptk_nama = str(current_user.get("nama", "")).strip()
-        current_pptk_uname = str(current_user.get("user_name") or current_user.get("username", "")).strip()
-        current_pptk_label = f"{current_pptk_nama} ({current_pptk_uname})" if current_pptk_uname else current_pptk_nama
-        if current_pptk_label not in pptk_opts:
-            pptk_opts = [current_pptk_label] + pptk_opts
-        pptk_default = current_pptk_label
-
-    if pptk_opts:
-        try:
-            default_idx = pptk_opts.index(pptk_default) if pptk_default in pptk_opts else 0
-        except ValueError:
-            default_idx = 0
-        pptk_selected = st.selectbox("Pilih PPTK", pptk_opts, index=default_idx)
-        st.session_state.pptk_filter = pptk_selected
-        if user_peran in ("ADMIN", "KASUBAG_PEK") and pptk_selected == "Semua PPTK":
-            st.caption("Data ditampilkan untuk: **Semua PPTK**")
-        else:
-            st.caption(f"Data ditampilkan untuk: **{pptk_selected}**")
-    else:
-        st.info("Belum ada data PPTK di master pengguna.")
-        st.session_state.pptk_filter = None
+        st.caption("📊 Data ditampilkan untuk: **Semua PPTK**")
 
     if st.button("Logout"):
         st.session_state.logged_in = False
