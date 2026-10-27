@@ -614,58 +614,29 @@ def edit_transaksi(no: int, new_data: dict) -> bool:
 
 # ===================== LOAD DATA =====================
 
-sheet_list = [
-    ("PENGGUNA", "Data Pengguna"),
-    ("MASTER_WILAYAH", "Data Wilayah"),
-    ("MASTER_REKENING", "Data Rekening Belanja"),
-    ("MASTER_KEGIATAN", "Data Sub Kegiatan"),
-    ("TRANSAKSI", "Data Transaksi"),
-    ("PERUBAHAN_PAGU", "Data Perubahan Pagu"),
-]
+# Opsi A: Lazy Loading — data hanya dimuat saat menu membutuhkannya.
+# load_sheet() sudah dilengkapi @st.cache_data(ttl=300) sehingga
+# pemanggilan berulang dalam satu sesi tidak mengakses Google Sheets ulang.
 
-# --- Opsi C: Cek apakah data sudah ada di session_state ---
-data_sudah_dimuat = all(
-    f"df_{sheet_name.lower()}" in st.session_state
-    for sheet_name, _ in sheet_list
-)
+def get_df(worksheet_name: str) -> pd.DataFrame:
+    """Helper lazy loading: ambil DataFrame dari sheet dengan cache."""
+    return load_sheet(worksheet_name)
 
-if not data_sudah_dimuat:
-    # Animasi Loading Kustom dengan Progress Bar (hanya saat pertama kali)
-    loading_container = st.container()
-    with loading_container:
-        st.markdown('<div class="loading-container">', unsafe_allow_html=True)
-        st.markdown('<div class="loading-title">🔄 Memuat Data SIMKEU</div>', unsafe_allow_html=True)
-        status_text = st.empty()
-        progress_bar = st.progress(0)
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    for i, (sheet_name, label) in enumerate(sheet_list):
-        status_text.markdown(f'<div class="loading-sheet">⏳ Memuat {label}...</div>', unsafe_allow_html=True)
-        # Opsi B: st.cache_data menangani pemanggilan berulang ke Google Sheets
-        df = load_sheet(sheet_name)
-        st.session_state[f"df_{sheet_name.lower()}"] = df
-        progress_bar.progress((i + 1) / len(sheet_list))
-
-    loading_container.empty()
-
-# Ambil data dari session_state (Opsi C) — cepat saat pindah menu
-df_pengguna = st.session_state.get("df_pengguna", pd.DataFrame())
-df_wilayah = st.session_state.get("df_wilayah", pd.DataFrame())
-df_rekening = st.session_state.get("df_rekening", pd.DataFrame())
-df_kegiatan = st.session_state.get("df_kegiatan", pd.DataFrame())
-df_transaksi = st.session_state.get("df_transaksi", pd.DataFrame())
-df_perubahan = st.session_state.get("df_perubahan", pd.DataFrame())
-
-# Pastikan kolom STATUS ada (untuk approval transaksi)
-if not df_transaksi.empty and "STATUS" not in df_transaksi.columns:
-    df_transaksi["STATUS"] = "Draft"
-    df_transaksi["DISETUJUI_OLEH"] = ""
-    df_transaksi["TANGGAL_APPROVAL"] = ""
+# Inisialisasi variabel kosong (akan diisi saat menu membutuhkan)
+df_pengguna = pd.DataFrame()
+df_wilayah = pd.DataFrame()
+df_rekening = pd.DataFrame()
+df_kegiatan = pd.DataFrame()
+df_transaksi = pd.DataFrame()
+df_perubahan = pd.DataFrame()
 
 # ===================== LOGIN =====================
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.current_user = None
+
+# Lazy load data PENGGUNA untuk login
+df_pengguna = get_df("PENGGUNA")
 
 if not st.session_state.logged_in:
     st.title("Login SIMKEU 2027")
@@ -734,14 +705,15 @@ with st.sidebar:
     if st.button("Refresh data"):
         st.cache_resource.clear()
         st.cache_data.clear()
-        # Hapus data dari session_state untuk memaksa pemuatan ulang
-        for sheet_name, _ in sheet_list:
-            key = f"df_{sheet_name.lower()}"
-            st.session_state.pop(key, None)
         st.rerun()
 
 # ===================== TRANSAKSI =====================
 if menu == "Transaksi":
+    # Lazy load data yang dibutuhkan menu Transaksi
+    df_rekening = get_df("MASTER_REKENING")
+    df_kegiatan = get_df("MASTER_KEGIATAN")
+    df_transaksi = get_df("TRANSAKSI")
+    df_pengguna = get_df("PENGGUNA")
     st.header("Input Transaksi")
 
     if "simpan_status" in st.session_state:
@@ -945,6 +917,9 @@ if menu == "Transaksi":
 
 # ===================== DASHBOARD =====================
 elif menu == "Dashboard":
+    # Lazy load data yang dibutuhkan menu Dashboard
+    df_kegiatan = get_df("MASTER_KEGIATAN")
+    df_transaksi = get_df("TRANSAKSI")
     st.header("Dashboard")
 
     total_pagu = 0
@@ -1043,6 +1018,10 @@ elif menu == "Dashboard":
 
 # ===================== PERUBAHAN PAGU =====================
 elif menu == "Perubahan Pagu":
+    # Lazy load data yang dibutuhkan menu Perubahan Pagu
+    df_kegiatan = get_df("MASTER_KEGIATAN")
+    df_perubahan = get_df("PERUBAHAN_PAGU")
+    df_pengguna = get_df("PENGGUNA")
     if not is_manager(current_user.get("peran", "")):
         st.warning("Menu ini hanya untuk pengelola (ADMIN / KASUBAG_PEK).")
         st.stop()
@@ -1090,6 +1069,11 @@ elif menu == "Perubahan Pagu":
 
 # ===================== MASTER DATA =====================
 elif menu == "Master Data":
+    # Lazy load data yang dibutuhkan menu Master Data
+    df_wilayah = get_df("MASTER_WILAYAH")
+    df_kegiatan = get_df("MASTER_KEGIATAN")
+    df_rekening = get_df("MASTER_REKENING")
+    df_pengguna = get_df("PENGGUNA")
     st.header("Master Data")
     tab1, tab2, tab3, tab4, tab5 = st.tabs(["Wilayah", "Sub Kegiatan", "Rekening", "Pengguna", "Audit Log"])
 
