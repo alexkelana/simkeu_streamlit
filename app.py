@@ -13,6 +13,7 @@ import streamlit as st
 import pandas as pd
 import requests
 import io
+import sqlite3
 from datetime import date, datetime
 from streamlit_gsheets import GSheetsConnection
 
@@ -51,6 +52,72 @@ if "dark_mode" not in st.session_state:
 def get_conn():
     return st.connection("gsheets", type=GSheetsConnection)
 
+# ===================== SQLITE FALLBACK (P3) =====================
+
+SQLITE_PATH = "simkeu_local.db"
+
+def _sqlite_connect():
+    return sqlite3.connect(SQLITE_PATH)
+
+def sqlite_init():
+    """Buat tabel-tabel SQLite lokal jika belum ada."""
+    try:
+        conn = _sqlite_connect()
+        c = conn.cursor()
+        for table, cols in {
+            "TRANSAKSI": "NO INTEGER PRIMARY KEY, SUB KEGIATAN TEXT, KODE_REKENING TEXT, PENGELOMPOKAN TEXT, URAIAN TEXT, JENIS TEXT, NOMINAL REAL, TANGGAL TEXT, BUKTI TEXT, PPTK TEXT, STATUS TEXT",
+            "MASTER_REKENING": "id INTEGER PRIMARY KEY AUTOINCREMENT, kode_rekening TEXT, uraian_rekening TEXT",
+            "MASTER_WILAYAH": "id INTEGER PRIMARY KEY AUTOINCREMENT, nama_wilayah TEXT, kode_wilayah TEXT",
+            "MASTER_KEGIATAN": "id INTEGER PRIMARY KEY AUTOINCREMENT, subkegiatan TEXT, nama_kegiatan TEXT, pagu_awal REAL",
+            "PENGGUNA": "id INTEGER PRIMARY KEY AUTOINCREMENT, user_name TEXT, password TEXT, nama TEXT, peran TEXT",
+            "AUDIT_LOG": "id INTEGER PRIMARY KEY AUTOINCREMENT, WAKTU TEXT, USER TEXT, AKSI TEXT, TABEL TEXT, RECORD_ID TEXT, OLD_VALUES TEXT, NEW_VALUES TEXT",
+            "PERUBAHAN_PAGU": "id INTEGER PRIMARY KEY AUTOINCREMENT, SUB_KEGIATAN TEXT, PAGU_BARU REAL, ALASAN TEXT, DIAJUKAN_OLEH TEXT, TANGGAL_AJUAN TEXT, STATUS TEXT",
+        }.items():
+            c.execute(f"CREATE TABLE IF NOT EXISTS {table} ({cols})")
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
+def sqlite_read(table: str) -> pd.DataFrame:
+    """Baca data dari SQLite lokal."""
+    try:
+        sqlite_init()
+        conn = _sqlite_connect()
+        df = pd.read_sql_query(f"SELECT * FROM {table}", conn)
+        conn.close()
+        return df
+    except Exception:
+        return pd.DataFrame()
+
+def sqlite_write(table: str, df: pd.DataFrame) -> bool:
+    """Tulis ulang data ke SQLite lokal."""
+    try:
+        sqlite_init()
+        conn = _sqlite_connect()
+        df.to_sql(table, conn, if_exists="replace", index=False)
+        conn.commit()
+        conn.close()
+        return True
+    except Exception:
+        return False
+
+# Tandai apakah Google Sheets tersedia
+_gsheets_available = None
+
+def check_gsheets_available() -> bool:
+    """Cek apakah Google Sheets dapat diakses."""
+    global _gsheets_available
+    if _gsheets_available is not None:
+        return _gsheets_available
+    try:
+        conn = get_conn()
+        conn.read(spreadsheet=SPREADSHEET_URL, worksheet="TRANSAKSI", ttl=5)
+        _gsheets_available = True
+    except Exception:
+        _gsheets_available = False
+    return _gsheets_available
+
 # ===================== THEME / DARK MODE =====================
 if st.session_state.dark_mode:
     st.markdown(
@@ -70,19 +137,32 @@ if st.session_state.dark_mode:
     )
 
 def load_sheet(worksheet_name: str) -> pd.DataFrame:
-    """Baca worksheet. Kembalikan DataFrame kosong jika gagal."""
+    """Baca worksheet. Fallback ke SQLite jika Google Sheets tidak tersedia."""
     try:
-        conn = get_conn()
-        df = conn.read(spreadsheet=SPREADSHEET_URL, worksheet=worksheet_name, ttl=30)
-        if df is None or df.empty:
-            return pd.DataFrame()
-        return df
-    except Exception as e:
-        st.error(f"Gagal membaca sheet '{worksheet_name}': {e}")
-        st.info("Pastikan service account sudah di-share ke spreadsheet dan secrets.toml sudah benar.")
-        return pd.DataFrame()
+        if check_gsheets_available():
+            conn = get_conn()
+            df = conn.read(spreadsheet=SPREADSHEET_URL, worksheet=worksheet_name, ttl=30)
+            if df is not None and not df.empty:
+                return df
+    except Exception:
+        pass
+    # Fallback ke SQLite
+    return sqlite_read(worksheet_name)
 
-def append_transaksi(new_data: dict):
+def update_sheet_data(worksheet_name: str, df: pd.DataFrame) -> bool:
+    """Tulis ulang seluruh data worksheet. Google Sheets utama, SQLite fallback."""
+    try:
+        if check_gsheets_available():
+            conn = get_conn()
+            conn.update(spreadsheet=SPREADSHEET_URL, worksheet=worksheet_name, data=df)
+            st.cache_resource.clear()
+            return True
+    except Exception:
+        pass
+    # Fallback ke SQLite
+    return sqlite_write(worksheet_name, df)
+
+def append_transaksi(new_data: dict, user: str = "Sistem"):
     """Tambahkan baris baru ke sheet TRANSAKSI."""
     try:
         conn = get_conn()
@@ -92,7 +172,7 @@ def append_transaksi(new_data: dict):
                 "NO", "SUB KEGIATAN", "KODE REKENING BELANJA",
                 "PENGELOMPOKAN BELANJA (#)", "URAIAN",
                 "JENIS TRANSAKSI (UP/GU/LS)", "NOMINAL",
-                "TANGGAL PENGAJUAN", "BUKTI DUKUNG SPJ", "PPTK"
+                "TANGGAL PENGAJUAN", "BUKTI DUKUNG SPJ", "PPTK", "STATUS"
             ])
         next_no = 1
         if not df.empty and "NO" in df.columns:
@@ -101,13 +181,33 @@ def append_transaksi(new_data: dict):
                 next_no = int(nums.max()) + 1
 
         new_data["NO"] = next_no
+        new_data["STATUS"] = "Draft"
         new_row = pd.DataFrame([new_data])
         updated = pd.concat([df, new_row], ignore_index=True)
 
         conn.update(spreadsheet=SPREADSHEET_URL, worksheet="TRANSAKSI", data=updated)
+        write_audit_log("CREATE", "TRANSAKSI", str(next_no), None, new_data, user)
         return True, next_no
-    except Exception as e:
-        return False, str(e)
+    except Exception:
+        # Fallback ke SQLite
+        try:
+            df_local = sqlite_read("TRANSAKSI")
+            if df_local.empty:
+                df_local = pd.DataFrame(columns=list(new_data.keys()) + ["STATUS"])
+            next_no_local = 1
+            if not df_local.empty and "NO" in df_local.columns:
+                nums = pd.to_numeric(df_local["NO"], errors="coerce").dropna()
+                if not nums.empty:
+                    next_no_local = int(nums.max()) + 1
+            new_data["NO"] = next_no_local
+            new_data["STATUS"] = "Draft"
+            new_row = pd.DataFrame([new_data])
+            updated_local = pd.concat([df_local, new_row], ignore_index=True)
+            sqlite_write("TRANSAKSI", updated_local)
+            write_audit_log("CREATE", "TRANSAKSI", str(next_no_local), None, new_data, user)
+            return True, next_no_local
+        except Exception as e2:
+            return False, str(e2)
 
 def send_telegram(message: str) -> bool:
     """Kirim notifikasi ke Telegram. Return True jika berhasil."""
@@ -186,6 +286,51 @@ def export_to_pdf(df: pd.DataFrame, nama_file: str = "laporan_simkeu.pdf") -> by
     doc.build(elements)
     return buffer.getvalue()
 
+# ===================== CETAK SPJ / SURAT (P3) =====================
+
+def generate_spj_document(transaksi_row: pd.Series) -> bytes:
+    """Generate dokumen SPJ (Surat Pertanggungjawaban) dalam format PDF."""
+    if not REPORTLAB_AVAILABLE:
+        return b""
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    styles = getSampleStyleSheet()
+    elements = []
+
+    elements.append(Paragraph("SURAT PERTANGGUNGJAWABAN (SPJ)", styles["Title"]))
+    elements.append(Paragraph("Kecamatan Candisari 2027", styles["Heading2"]))
+    elements.append(Paragraph("<br/><br/>", styles["Normal"]))
+
+    data = [
+        ["No Transaksi", str(transaksi_row.get("NO", "-"))],
+        ["Tanggal Pengajuan", str(transaksi_row.get("TANGGAL PENGAJUAN", "-"))],
+        ["PPTK", str(transaksi_row.get("PPTK", "-"))],
+        ["Sub Kegiatan", str(transaksi_row.get("SUB KEGIATAN", "-"))],
+        ["Kode Rekening", str(transaksi_row.get("KODE REKENING BELANJA", "-"))],
+        ["Pengelompokan", str(transaksi_row.get("PENGELOMPOKAN BELANJA (#)", "-"))],
+        ["Jenis Transaksi", str(transaksi_row.get("JENIS TRANSAKSI (UP/GU/LS)", "-"))],
+        ["Nominal", format_rupiah(transaksi_row.get("NOMINAL", 0))],
+        ["Uraian", str(transaksi_row.get("URAIAN", "-"))],
+        ["Bukti Dukung", str(transaksi_row.get("BUKTI DUKUNG SPJ", "-"))],
+        ["Status", str(transaksi_row.get("STATUS", "-"))],
+    ]
+
+    table = Table(data, colWidths=[120, 400])
+    table.setStyle(TableStyle([
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+        ("BACKGROUND", (0, 0), (0, -1), colors.lightgrey),
+        ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, -1), 9),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+    ]))
+    elements.append(table)
+    elements.append(Paragraph("<br/><br/>", styles["Normal"]))
+    elements.append(Paragraph("Dibuat oleh: ______________________", styles["Normal"]))
+    elements.append(Paragraph("Disetujui oleh: ______________________", styles["Normal"]))
+
+    doc.build(elements)
+    return buffer.getvalue()
+
 def is_manager(peran: str) -> bool:
     return str(peran).upper() in ("ADMIN", "KASUBAG_PEK")
 
@@ -227,80 +372,113 @@ def update_sheet_data(worksheet_name: str, df: pd.DataFrame) -> bool:
         return False
 
 # --- Master Rekening (pilot CRUD) ---
-def add_master_rekening(kode: str, uraian: str) -> bool:
+def add_master_rekening(kode: str, uraian: str, user: str = "Sistem") -> bool:
     df = load_sheet("MASTER_REKENING")
     if df.empty:
         df = pd.DataFrame(columns=["kode_rekening", "uraian_rekening"])
     new_row = pd.DataFrame([{"kode_rekening": kode, "uraian_rekaning": uraian}])
     updated = pd.concat([df, new_row], ignore_index=True)
-    return update_sheet_data("MASTER_REKENING", updated)
+    ok = update_sheet_data("MASTER_REKENING", updated)
+    if ok:
+        write_audit_log("CREATE", "MASTER_REKENING", kode, None, {"kode_rekening": kode, "uraian_rekening": uraian}, user)
+    return ok
 
-def edit_master_rekening(idx: int, kode: str, uraian: str) -> bool:
+def edit_master_rekening(idx: int, kode: str, uraian: str, user: str = "Sistem") -> bool:
     df = load_sheet("MASTER_REKENING")
     if df.empty or idx < 0 or idx >= len(df):
         return False
+    old = df.iloc[idx].to_dict()
     df.at[idx, "kode_rekening"] = kode
     df.at[idx, "uraian_rekening"] = uraian
-    return update_sheet_data("MASTER_REKENING", df)
+    ok = update_sheet_data("MASTER_REKENING", df)
+    if ok:
+        write_audit_log("UPDATE", "MASTER_REKENING", str(idx), old, {"kode_rekening": kode, "uraian_rekening": uraian}, user)
+    return ok
 
-def delete_master_rekening(idx: int) -> bool:
+def delete_master_rekening(idx: int, user: str = "Sistem") -> bool:
     df = load_sheet("MASTER_REKENING")
     if df.empty or idx < 0 or idx >= len(df):
         return False
+    old = df.iloc[idx].to_dict()
     df = df.drop(index=idx).reset_index(drop=True)
-    return update_sheet_data("MASTER_REKENING", df)
+    ok = update_sheet_data("MASTER_REKENING", df)
+    if ok:
+        write_audit_log("DELETE", "MASTER_REKENING", str(idx), old, None, user)
+    return ok
 
 # --- Master Wilayah ---
-def add_master_wilayah(nama: str, kode: str) -> bool:
+def add_master_wilayah(nama: str, kode: str, user: str = "Sistem") -> bool:
     df = load_sheet("MASTER_WILAYAH")
     if df.empty:
         df = pd.DataFrame(columns=["nama_wilayah", "kode_wilayah"])
     new_row = pd.DataFrame([{"nama_wilayah": nama, "kode_wilayah": kode}])
     updated = pd.concat([df, new_row], ignore_index=True)
-    return update_sheet_data("MASTER_WILAYAH", updated)
+    ok = update_sheet_data("MASTER_WILAYAH", updated)
+    if ok:
+        write_audit_log("CREATE", "MASTER_WILAYAH", kode, None, {"nama_wilayah": nama, "kode_wilayah": kode}, user)
+    return ok
 
-def edit_master_wilayah(idx: int, nama: str, kode: str) -> bool:
+def edit_master_wilayah(idx: int, nama: str, kode: str, user: str = "Sistem") -> bool:
     df = load_sheet("MASTER_WILAYAH")
     if df.empty or idx < 0 or idx >= len(df):
         return False
+    old = df.iloc[idx].to_dict()
     df.at[idx, "nama_wilayah"] = nama
     df.at[idx, "kode_wilayah"] = kode
-    return update_sheet_data("MASTER_WILAYAH", df)
+    ok = update_sheet_data("MASTER_WILAYAH", df)
+    if ok:
+        write_audit_log("UPDATE", "MASTER_WILAYAH", str(idx), old, {"nama_wilayah": nama, "kode_wilayah": kode}, user)
+    return ok
 
-def delete_master_wilayah(idx: int) -> bool:
+def delete_master_wilayah(idx: int, user: str = "Sistem") -> bool:
     df = load_sheet("MASTER_WILAYAH")
     if df.empty or idx < 0 or idx >= len(df):
         return False
+    old = df.iloc[idx].to_dict()
     df = df.drop(index=idx).reset_index(drop=True)
-    return update_sheet_data("MASTER_WILAYAH", df)
+    ok = update_sheet_data("MASTER_WILAYAH", df)
+    if ok:
+        write_audit_log("DELETE", "MASTER_WILAYAH", str(idx), old, None, user)
+    return ok
 
 # --- Master Kegiatan ---
-def add_master_kegiatan(subkode: str, nama: str, pagu: float) -> bool:
+def add_master_kegiatan(subkode: str, nama: str, pagu: float, user: str = "Sistem") -> bool:
     df = load_sheet("MASTER_KEGIATAN")
     if df.empty:
         df = pd.DataFrame(columns=["subkegiatan", "nama_kegiatan", "pagu_awal"])
     new_row = pd.DataFrame([{"subkegiatan": subkode, "nama_kegiatan": nama, "pagu_awal": pagu}])
     updated = pd.concat([df, new_row], ignore_index=True)
-    return update_sheet_data("MASTER_KEGIATAN", updated)
+    ok = update_sheet_data("MASTER_KEGIATAN", updated)
+    if ok:
+        write_audit_log("CREATE", "MASTER_KEGIATAN", subkode, None, {"subkegiatan": subkode, "nama_kegiatan": nama, "pagu_awal": pagu}, user)
+    return ok
 
-def edit_master_kegiatan(idx: int, subkode: str, nama: str, pagu: float) -> bool:
+def edit_master_kegiatan(idx: int, subkode: str, nama: str, pagu: float, user: str = "Sistem") -> bool:
     df = load_sheet("MASTER_KEGIATAN")
     if df.empty or idx < 0 or idx >= len(df):
         return False
+    old = df.iloc[idx].to_dict()
     df.at[idx, "subkegiatan"] = subkode
     df.at[idx, "nama_kegiatan"] = nama
     df.at[idx, "pagu_awal"] = pagu
-    return update_sheet_data("MASTER_KEGIATAN", df)
+    ok = update_sheet_data("MASTER_KEGIATAN", df)
+    if ok:
+        write_audit_log("UPDATE", "MASTER_KEGIATAN", str(idx), old, {"subkegiatan": subkode, "nama_kegiatan": nama, "pagu_awal": pagu}, user)
+    return ok
 
-def delete_master_kegiatan(idx: int) -> bool:
+def delete_master_kegiatan(idx: int, user: str = "Sistem") -> bool:
     df = load_sheet("MASTER_KEGIATAN")
     if df.empty or idx < 0 or idx >= len(df):
         return False
+    old = df.iloc[idx].to_dict()
     df = df.drop(index=idx).reset_index(drop=True)
-    return update_sheet_data("MASTER_KEGIATAN", df)
+    ok = update_sheet_data("MASTER_KEGIATAN", df)
+    if ok:
+        write_audit_log("DELETE", "MASTER_KEGIATAN", str(idx), old, None, user)
+    return ok
 
 # --- Master Pengguna (User Management via UI) ---
-def add_master_user(user_name: str, password: str, nama: str, peran: str) -> bool:
+def add_master_user(user_name: str, password: str, nama: str, peran: str, user: str = "Sistem") -> bool:
     df = load_sheet("PENGGUNA")
     if df.empty:
         df = pd.DataFrame(columns=["user_name", "password", "nama", "peran"])
@@ -311,24 +489,59 @@ def add_master_user(user_name: str, password: str, nama: str, peran: str) -> boo
         "peran": peran
     }])
     updated = pd.concat([df, new_row], ignore_index=True)
-    return update_sheet_data("PENGGUNA", updated)
+    ok = update_sheet_data("PENGGUNA", updated)
+    if ok:
+        write_audit_log("CREATE", "PENGGUNA", user_name, None, {"user_name": user_name, "nama": nama, "peran": peran}, user)
+    return ok
 
-def edit_master_user(idx: int, user_name: str, password: str, nama: str, peran: str) -> bool:
+def edit_master_user(idx: int, user_name: str, password: str, nama: str, peran: str, user: str = "Sistem") -> bool:
     df = load_sheet("PENGGUNA")
     if df.empty or idx < 0 or idx >= len(df):
         return False
+    old = df.iloc[idx].to_dict()
     df.at[idx, "user_name"] = user_name
     df.at[idx, "password"] = password
     df.at[idx, "nama"] = nama
     df.at[idx, "peran"] = peran
-    return update_sheet_data("PENGGUNA", df)
+    ok = update_sheet_data("PENGGUNA", df)
+    if ok:
+        write_audit_log("UPDATE", "PENGGUNA", str(idx), old, {"user_name": user_name, "nama": nama, "peran": peran}, user)
+    return ok
 
-def delete_master_user(idx: int) -> bool:
+def delete_master_user(idx: int, user: str = "Sistem") -> bool:
     df = load_sheet("PENGGUNA")
     if df.empty or idx < 0 or idx >= len(df):
         return False
+    old = df.iloc[idx].to_dict()
     df = df.drop(index=idx).reset_index(drop=True)
-    return update_sheet_data("PENGGUNA", df)
+    ok = update_sheet_data("PENGGUNA", df)
+    if ok:
+        write_audit_log("DELETE", "PENGGUNA", str(idx), old, None, user)
+    return ok
+
+# ===================== AUDIT LOG (P3) =====================
+
+def write_audit_log(action: str, table: str, record_id: str, old_values: dict = None, new_values: dict = None, user: str = "Sistem") -> bool:
+    """Catat aksi create/update/delete ke sheet AUDIT_LOG."""
+    try:
+        df = load_sheet("AUDIT_LOG")
+        if df.empty:
+            df = pd.DataFrame(columns=[
+                "WAKTU", "USER", "AKSI", "TABEL", "RECORD_ID", "OLD_VALUES", "NEW_VALUES"
+            ])
+        new_row = {
+            "WAKTU": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+            "USER": user,
+            "AKSI": action,
+            "TABEL": table,
+            "RECORD_ID": str(record_id),
+            "OLD_VALUES": str(old_values) if old_values else "",
+            "NEW_VALUES": str(new_values) if new_values else "",
+        }
+        updated = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+        return update_sheet_data("AUDIT_LOG", updated)
+    except Exception:
+        return False
 
 # ===================== BACKEND: TRANSAKSI APPROVAL & EDIT/HAPUS =====================
 
@@ -340,10 +553,14 @@ def update_transaksi_status(no: int, status: str, approved_by: str) -> bool:
     mask = pd.to_numeric(df["NO"], errors="coerce") == no
     if not mask.any():
         return False
+    old = df.loc[mask].iloc[0].to_dict()
     df.loc[mask, "STATUS"] = status
     df.loc[mask, "DISETUJUI_OLEH"] = approved_by
     df.loc[mask, "TANGGAL_APPROVAL"] = date.today().strftime("%d/%m/%Y")
-    return update_sheet_data("TRANSAKSI", df)
+    ok = update_sheet_data("TRANSAKSI", df)
+    if ok:
+        write_audit_log("UPDATE_STATUS", "TRANSAKSI", str(no), old, {"STATUS": status, "DISETUJUI_OLEH": approved_by}, approved_by)
+    return ok
 
 def delete_transaksi(no: int) -> bool:
     """Hapus transaksi berdasarkan nomor."""
@@ -353,8 +570,12 @@ def delete_transaksi(no: int) -> bool:
     mask = pd.to_numeric(df["NO"], errors="coerce") == no
     if not mask.any():
         return False
+    old = df.loc[mask].iloc[0].to_dict()
     df = df[~mask].reset_index(drop=True)
-    return update_sheet_data("TRANSAKSI", df)
+    ok = update_sheet_data("TRANSAKSI", df)
+    if ok:
+        write_audit_log("DELETE", "TRANSAKSI", str(no), old, None, "Sistem")
+    return ok
 
 def edit_transaksi(no: int, new_data: dict) -> bool:
     """Edit transaksi yang sudah ada berdasarkan nomor."""
@@ -364,10 +585,14 @@ def edit_transaksi(no: int, new_data: dict) -> bool:
     mask = pd.to_numeric(df["NO"], errors="coerce") == no
     if not mask.any():
         return False
+    old = df.loc[mask].iloc[0].to_dict()
     for col, val in new_data.items():
         if col in df.columns:
             df.loc[mask, col] = val
-    return update_sheet_data("TRANSAKSI", df)
+    ok = update_sheet_data("TRANSAKSI", df)
+    if ok:
+        write_audit_log("UPDATE", "TRANSAKSI", str(no), old, new_data, "Sistem")
+    return ok
 
 # ===================== LOAD DATA =====================
 with st.spinner("Memuat data dari Google Sheets..."):
@@ -439,6 +664,16 @@ with st.sidebar:
     if st.button(dark_label):
         st.session_state.dark_mode = not st.session_state.dark_mode
         st.rerun()
+
+    # ---- Multi-Kecamatan filter (P3) ----
+    st.divider()
+    st.markdown("### 🏘️ Kecamatan")
+    kec_opts = ["Candisari", "Jebres", "Laweyan", "Pasar Kliwon", "Serengan", "Banjarsari"]
+    kec_default = st.session_state.get("kecamatan_filter", "Candisari")
+    kec_selected = st.selectbox("Pilih Kecamatan", kec_opts, index=kec_opts.index(kec_default) if kec_default in kec_opts else 0)
+    st.session_state.kecamatan_filter = kec_selected
+    st.caption(f"Data ditampilkan untuk: **{kec_selected}**")
+
     if st.button("Logout"):
         st.session_state.logged_in = False
         st.session_state.current_user = None
@@ -508,7 +743,7 @@ if menu == "Transaksi":
                     "BUKTI DUKUNG SPJ": bukti or "",
                     "PPTK": pptk,
                 }
-                success, result = append_transaksi(new_data)
+                success, result = append_transaksi(new_data, user=current_user.get("nama", "Sistem"))
                 if success:
                     pesan = (
                         f"📌 <b>Transaksi Baru SIMKEU</b>\n"
@@ -575,7 +810,7 @@ if menu == "Transaksi":
         with col_no:
             target_no = st.number_input("Nomor Transaksi (NO)", min_value=1, step=1)
         with col_action:
-            aksi = st.selectbox("Pilih Aksi", ["Setujui", "Tolak", "Edit", "Hapus"])
+            aksi = st.selectbox("Pilih Aksi", ["Setujui", "Tolak", "Edit", "Hapus", "Cetak SPJ"])
 
         if aksi in ("Setujui", "Tolak"):
             status_baru = "Disetujui" if aksi == "Setujui" else "Ditolak"
@@ -628,6 +863,25 @@ if menu == "Transaksi":
                         st.rerun()
                     else:
                         st.error("Gagal menghapus transaksi.")
+
+        elif aksi == "Cetak SPJ":
+            st.markdown("### Cetak Surat Pertanggungjawaban (SPJ)")
+            row = df_transaksi[pd.to_numeric(df_transaksi["NO"], errors="coerce") == int(target_no)]
+            if not row.empty:
+                r = row.iloc[0]
+                st.info(f"SPJ untuk Transaksi No {target_no}")
+                if REPORTLAB_AVAILABLE:
+                    spj_bytes = generate_spj_document(r)
+                    st.download_button(
+                        label="⬇️ Unduh SPJ (PDF)",
+                        data=spj_bytes,
+                        file_name=f"SPJ_No{target_no}.pdf",
+                        mime="application/pdf",
+                    )
+                else:
+                    st.warning("Library reportlab tidak terinstal. Tidak dapat generate PDF.")
+            else:
+                st.error("Transaksi tidak ditemukan.")
     else:
         st.info("Belum ada transaksi.")
 
@@ -779,7 +1033,7 @@ elif menu == "Perubahan Pagu":
 # ===================== MASTER DATA =====================
 elif menu == "Master Data":
     st.header("Master Data")
-    tab1, tab2, tab3, tab4 = st.tabs(["Wilayah", "Sub Kegiatan", "Rekening", "Pengguna"])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["Wilayah", "Sub Kegiatan", "Rekening", "Pengguna", "Audit Log"])
 
     # ---------- Tab Wilayah ----------
     with tab1:
@@ -792,7 +1046,7 @@ elif menu == "Master Data":
                 w_nama = st.text_input("Nama Wilayah")
                 w_kode = st.text_input("Kode Wilayah")
                 if st.form_submit_button("Simpan Wilayah"):
-                    if add_master_wilayah(w_nama, w_kode):
+                    if add_master_wilayah(w_nama, w_kode, user=current_user.get("nama", "Sistem")):
                         st.success("Wilayah berhasil ditambahkan.")
                         st.rerun()
                     else:
@@ -812,7 +1066,7 @@ elif menu == "Master Data":
                 k_nama = st.text_input("Nama Kegiatan")
                 k_pagu = st.number_input("Pagu Awal (Rp)", min_value=0, step=1000000)
                 if st.form_submit_button("Simpan Kegiatan"):
-                    if add_master_kegiatan(k_sub, k_nama, k_pagu):
+                    if add_master_kegiatan(k_sub, k_nama, k_pagu, user=current_user.get("nama", "Sistem")):
                         st.success("Sub kegiatan berhasil ditambahkan.")
                         st.rerun()
                     else:
@@ -833,7 +1087,7 @@ elif menu == "Master Data":
                     r_kode = st.text_input("Kode Rekening")
                     r_uraian = st.text_input("Uraian Rekening")
                     if st.form_submit_button("Simpan Rekening"):
-                        if add_master_rekening(r_kode, r_uraian):
+                        if add_master_rekening(r_kode, r_uraian, user=current_user.get("nama", "Sistem")):
                             st.success("Rekening berhasil ditambahkan.")
                             st.rerun()
                         else:
@@ -847,14 +1101,14 @@ elif menu == "Master Data":
                     col_simpan, col_hapus = st.columns(2)
                     with col_simpan:
                         if st.form_submit_button("Simpan Perubahan"):
-                            if edit_master_rekening(int(r_idx), e_kode, e_uraian):
+                            if edit_master_rekening(int(r_idx), e_kode, e_uraian, user=current_user.get("nama", "Sistem")):
                                 st.success("Rekening berhasil diupdate.")
                                 st.rerun()
                             else:
                                 st.error("Gagal mengupdate rekening.")
                     with col_hapus:
                         if st.form_submit_button("Hapus", type="secondary"):
-                            if delete_master_rekening(int(r_idx)):
+                            if delete_master_rekening(int(r_idx), user=current_user.get("nama", "Sistem")):
                                 st.success("Rekening berhasil dihapus.")
                                 st.rerun()
                             else:
@@ -875,13 +1129,28 @@ elif menu == "Master Data":
                 u_nama = st.text_input("Nama Lengkap")
                 u_peran = st.selectbox("Peran", ["ADMIN", "KASUBAG_PEK", "PPTK"])
                 if st.form_submit_button("Simpan Pengguna"):
-                    if add_master_user(u_user, u_pass, u_nama, u_peran):
+                    if add_master_user(u_user, u_pass, u_nama, u_peran, user=current_user.get("nama", "Sistem")):
                         st.success("Pengguna berhasil ditambahkan.")
                         st.rerun()
                     else:
                         st.error("Gagal menambahkan pengguna.")
         else:
             st.info("Belum ada data pengguna.")
+
+    # ---------- Tab Audit Log ----------
+    with tab5:
+        st.subheader("Audit Log — Riwayat Perubahan Data")
+        df_audit = load_sheet("AUDIT_LOG")
+        if not df_audit.empty:
+            # Urutkan terbaru dulu
+            df_audit = df_audit.sort_values("WAKTU", ascending=False)
+            st.dataframe(df_audit, use_container_width=True, hide_index=True)
+            st.divider()
+            if st.button("Refresh Audit Log"):
+                st.cache_resource.clear()
+                st.rerun()
+        else:
+            st.info("Belum ada riwayat audit log.")
 
 st.divider()
 st.caption("SIMKEU Kecamatan Candisari 2027 · Data dari Google Sheets · Validasi dan hak akses tetap harus di backend")
