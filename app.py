@@ -122,9 +122,11 @@ def sqlite_write(table: str, df: pd.DataFrame) -> bool:
 # Tandai apakah Google Sheets tersedia
 _gsheets_available = None
 
-def check_gsheets_available() -> bool:
+def check_gsheets_available(force_refresh: bool = False) -> bool:
     """Cek apakah Google Sheets dapat diakses."""
     global _gsheets_available
+    if force_refresh:
+        _gsheets_available = None
     if _gsheets_available is not None:
         return _gsheets_available
     try:
@@ -170,6 +172,8 @@ def load_sheet(worksheet_name: str) -> pd.DataFrame:
 def update_sheet_data(worksheet_name: str, df: pd.DataFrame) -> bool:
     """Tulis ulang seluruh data worksheet. Google Sheets utama, SQLite fallback."""
     try:
+        # Reset status koneksi agar pengecekan dilakukan ulang
+        check_gsheets_available(force_refresh=True)
         if check_gsheets_available():
             conn = get_conn()
             conn.update(spreadsheet=SPREADSHEET_URL, worksheet=worksheet_name, data=df)
@@ -179,7 +183,9 @@ def update_sheet_data(worksheet_name: str, df: pd.DataFrame) -> bool:
     except Exception:
         pass
     # Fallback ke SQLite
-    return sqlite_write(worksheet_name, df)
+    ok = sqlite_write(worksheet_name, df)
+    st.cache_data.clear()  # Bersihkan cache juga pada fallback
+    return ok
 
 def append_transaksi(new_data: dict, user: str = "Sistem"):
     """Tambahkan baris baru ke sheet TRANSAKSI."""
