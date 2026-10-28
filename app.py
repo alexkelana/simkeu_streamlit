@@ -58,6 +58,40 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# ===================== STYLING TOMBOL UNDUH =====================
+st.markdown(
+    """
+    <style>
+    /* Styling khusus untuk tombol download */
+    div[data-testid="stDownloadButton"] > button {
+        background: linear-gradient(135deg, #0f4c81 0%, #002b49 100%) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 8px !important;
+        padding: 0.6rem 1.2rem !important;
+        font-weight: 600 !important;
+        /* Efek bayangan lembut agar tidak flat */
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+        transition: all 0.25s ease-in-out !important;
+    }
+
+    /* Efek saat tombol di-hover (kursor di atas tombol) */
+    div[data-testid="stDownloadButton"] > button:hover {
+        transform: translateY(-2px) !important; /* Tombol melayang sedikit ke atas */
+        box-shadow: 0 7px 14px rgba(0, 0, 0, 0.18), 0 3px 6px rgba(0, 0, 0, 0.12) !important;
+        background: linear-gradient(135deg, #135d9d 0%, #00385f 100%) !important;
+    }
+
+    /* Efek saat tombol diklik */
+    div[data-testid="stDownloadButton"] > button:active {
+        transform: translateY(1px) !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 # ===================== KONEKSI =====================
 @st.cache_resource
 def get_conn():
