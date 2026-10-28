@@ -1,14 +1,15 @@
 """Unit / integrasi tes untuk SIMKEU Kecamatan Candisari 2027 (AppTest)."""
 
-import os
 import sys
+from pathlib import Path
 
-import pytest
 from streamlit.testing.v1 import AppTest
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def _run_app():
-    return AppTest.from_file("streamlit_app.py").run(timeout=60)
+    return AppTest.from_file(ROOT / "streamlit_app.py").run(timeout=60)
 
 
 class TestAppRuns:
@@ -18,7 +19,7 @@ class TestAppRuns:
 
     def test_format_rupiah(self):
         # Impor fungsi murni tanpa menjalankan UI
-        sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+        sys.path.insert(0, str(ROOT))
         from app_pages.helpers import format_rupiah, is_manager
 
         assert format_rupiah(1000000) == "Rp 1.000.000"
@@ -29,7 +30,7 @@ class TestAppRuns:
         assert format_rupiah(None) == "-"
 
     def test_parse_number(self):
-        sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+        sys.path.insert(0, str(ROOT))
         from app_pages.helpers import parse_number
 
         assert parse_number("500,000.00") == 500000.0
@@ -40,7 +41,7 @@ class TestAppRuns:
         assert parse_number("abc") is None
 
     def test_is_manager(self):
-        sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+        sys.path.insert(0, str(ROOT))
         from app_pages.helpers import is_manager
 
         assert is_manager("ADMIN") is True
@@ -49,5 +50,5 @@ class TestAppRuns:
         assert is_manager("admin") is True
 
     def test_login_page_no_exception(self):
-        at = AppTest.from_file("app_pages/login.py").run(timeout=60)
+        at = AppTest.from_file(ROOT / "app_pages/login.py").run(timeout=60)
         assert not at.exception, f"Login page error: {at.exception}"
