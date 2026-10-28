@@ -92,6 +92,67 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# ===================== STYLING TABEL PROFESIONAL =====================
+st.markdown(
+    """
+    <style>
+    /* Styling Tabel Utama — DataFrame & Table */
+    div[data-testid="stDataFrame"] table,
+    div[data-testid="stTable"] table {
+        border-collapse: separate;
+        border-spacing: 0;
+        width: 100%;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #E5E7EB;
+    }
+
+    /* Header Utama — Deep Blue / Ocean Navy */
+    div[data-testid="stDataFrame"] th,
+    div[data-testid="stTable"] th {
+        background-color: #1E3A8A !important;
+        color: #FFFFFF !important;
+        font-weight: 600 !important;
+        padding: 12px 16px !important;
+        text-align: left !important;
+        border-bottom: 2px solid #1E40AF !important;
+    }
+
+    /* Zebra Striping — Baris Ganjil & Genap */
+    div[data-testid="stDataFrame"] tbody tr:nth-child(even),
+    div[data-testid="stTable"] tbody tr:nth-child(even) {
+        background-color: #F8FAFC !important;
+    }
+    div[data-testid="stDataFrame"] tbody tr:nth-child(odd),
+    div[data-testid="stTable"] tbody tr:nth-child(odd) {
+        background-color: #FFFFFF !important;
+    }
+
+    /* Efek Hover Baris — Soft Sky Blue */
+    div[data-testid="stDataFrame"] tbody tr:hover,
+    div[data-testid="stTable"] tbody tr:hover {
+        background-color: #E0F2FE !important;
+        transition: background-color 0.2s ease;
+    }
+
+    /* Padding & Garis Pemisah Sel */
+    div[data-testid="stDataFrame"] td,
+    div[data-testid="stTable"] td {
+        padding: 10px 16px !important;
+        border-bottom: 1px solid #F1F5F9 !important;
+        color: #334155 !important;
+    }
+
+    /* Jarak antar tabel / bagian */
+    div[data-testid="stDataFrame"],
+    div[data-testid="stTable"] {
+        margin-bottom: 2rem !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 # ===================== KONEKSI =====================
 @st.cache_resource
 def get_conn():
@@ -806,16 +867,20 @@ if not st.session_state.logged_in:
 
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.title("SIMKEU 2027", text_alignment="center")
-        st.caption("Kecamatan Candisari")
+        st.markdown("<h1 style='text-align: center;'>SIMKEU 2027</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: gray;'>Kecamatan Candisari</p>", unsafe_allow_html=True)
 
         with st.form("login_form", clear_on_submit=False):
             username = st.text_input("User Name", placeholder="Masukkan username")
             password = st.text_input("Password", type="password", placeholder="Masukkan password")
-            submitted = st.form_submit_button("Masuk", type="primary", width="stretch")
+            
+            # PERBAIKAN: Gunakan use_container_width=True agar tombol memenuhi lebarnya form
+            submitted = st.form_submit_button("Masuk", type="primary", use_container_width=True)
+            
             if submitted:
                 username_clean = username.strip().lower()
                 password_clean = password.strip()
+                
                 # Validasi panjang input
                 if not username_clean or not password_clean:
                     st.error("User Name dan password tidak boleh kosong.")
@@ -830,6 +895,7 @@ if not st.session_state.logged_in:
                         if not user_row.empty:
                             st.session_state.current_user = user_row.iloc[0].to_dict()
                             st.session_state.logged_in = True
+                            
                             # Inisialisasi filter PPTK otomatis setelah login
                             user_peran_login = str(user_row.iloc[0].get("peran", "")).upper()
                             if user_peran_login == "PPTK":
@@ -838,6 +904,7 @@ if not st.session_state.logged_in:
                                 st.session_state.pptk_filter = f"{nama_login} ({uname_login})" if uname_login else nama_login
                             else:
                                 st.session_state.pptk_filter = "Semua PPTK"
+                            
                             st.rerun()
                         else:
                             st.error("User Name tidak ditemukan di sheet PENGGUNA.")
@@ -845,6 +912,7 @@ if not st.session_state.logged_in:
                         st.error("Sheet PENGGUNA tidak memiliki kolom user_name atau kosong.")
                 else:
                     st.error("User Name atau password salah.")
+
     st.stop()
 
 current_user = st.session_state.current_user
@@ -1098,6 +1166,7 @@ elif menu == "Dashboard":
         else:
             st.info("Library reportlab tidak tersedia.")
 
+    st.divider()
     st.subheader("Realisasi per Sub Kegiatan")
     if not df_kegiatan.empty and not df_transaksi.empty and nominal_col:
         df_transaksi_copy = df_transaksi.copy()
@@ -1131,6 +1200,7 @@ elif menu == "Dashboard":
         except Exception:
             pass
 
+    st.divider()
     st.subheader("Sub Kegiatan")
     if not df_kegiatan.empty:
         df_kegiatan_display = df_kegiatan.copy()
@@ -1168,6 +1238,7 @@ elif menu == "Dashboard":
     else:
         st.info("Belum ada data sub kegiatan.")
 
+    st.divider()
     st.subheader("Transaksi Terbaru")
     if not df_transaksi.empty:
         st.dataframe(format_df_rupiah(df_transaksi), hide_index=True)
@@ -1307,6 +1378,7 @@ elif menu == "Dashboard":
         else:
             st.info("Data transaksi tidak tersedia.")
 
+        st.divider()
         # ---- 4. Tren Realisasi Bulanan ----
         st.subheader("Tren Realisasi Bulanan")
         if not df_transaksi.empty and nominal_col and "TANGGAL PENGAJUAN" in df_transaksi.columns:
