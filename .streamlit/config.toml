@@ -88,11 +88,12 @@ codeBackgroundColor = "#F1F5F9"
 codeTextColor = "#334155"
 
 [theme.light.sidebar]
-backgroundColor = "#F8FAFC"
-secondaryBackgroundColor = "#F1F5F9"
-codeBackgroundColor = "#F1F5F9"
+# Sidebar sedikit lebih gelap dari body untuk soft contrast
+backgroundColor = "#F1F5F9"
+secondaryBackgroundColor = "#E2E8F0"
+codeBackgroundColor = "#E2E8F0"
 textColor = "#0F172A"
-borderColor = "#E2E8F0"
+borderColor = "#CBD5E1"
 primaryColor = "#2563EB"
 
 # ---------- Dark Mode ----------
@@ -107,9 +108,10 @@ codeBackgroundColor = "#1E293B"
 codeTextColor = "#CBD5E1"
 
 [theme.dark.sidebar]
-backgroundColor = "#0F172A"
-secondaryBackgroundColor = "#1E293B"
-codeBackgroundColor = "#1E293B"
+# Sidebar sedikit lebih gelap dari body untuk soft contrast
+backgroundColor = "#0B1120"
+secondaryBackgroundColor = "#16213E"
+codeBackgroundColor = "#16213E"
 textColor = "#F1F5F9"
-borderColor = "#334155"
+borderColor = "#1E293B"
 primaryColor = "#60A5FA"
