@@ -58,36 +58,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# ===================== WARNA BACKGROUND CARD METRIK =====================
-st.markdown(
-    """
-    <style>
-    /* Setiap card metrik di KPI Row diberi background warna berbeda via nth-child */
-    .st-key-kpi_row [data-testid="stMetric"]:nth-child(1) {
-        background-color: #e8f0f2 !important;   /* light slate from #264653 */
-        border-left: 4px solid #264653 !important;
-    }
-    .st-key-kpi_row [data-testid="stMetric"]:nth-child(2) {
-        background-color: #e8f5e9 !important;   /* light green */
-        border-left: 4px solid #10b981 !important;
-    }
-    .st-key-kpi_row [data-testid="stMetric"]:nth-child(3) {
-        background-color: #e0f2f1 !important;   /* light teal from #7A9E9F */
-        border-left: 4px solid #7A9E9F !important;
-    }
-    .st-key-kpi_row [data-testid="stMetric"]:nth-child(4) {
-        background-color: #fff3e0 !important;   /* light amber */
-        border-left: 4px solid #f59e0b !important;
-    }
-    /* Pastikan teks di dalam card tetap kontras */
-    .st-key-kpi_row [data-testid="stMetric"] * {
-        color: inherit !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
 # ===================== KONEKSI =====================
 @st.cache_resource
 def get_conn():
@@ -1052,8 +1022,8 @@ elif menu == "Dashboard":
     sisa = total_pagu - total_realisasi
     persen = (total_realisasi / total_pagu * 100) if total_pagu else 0
 
-    # ---- KPI Row — 4 card metrik dengan background warna berbeda ----------
-    with st.container(horizontal=True, key="kpi_row"):
+    # ---- KPI Row — 4 card metrik ----------
+    with st.container(horizontal=True):
         st.metric("Jumlah Sub Kegiatan", len(df_kegiatan), border=True)
         st.metric("Total Pagu", format_rupiah(total_pagu), border=True)
         st.metric("Realisasi", format_rupiah(total_realisasi), border=True)
