@@ -36,7 +36,7 @@ SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1MMi0ABevTztyCfuzje6JL
 
 st.set_page_config(
     page_title="SIMKEU Kecamatan Candisari 2027",
-    page_icon="📊",
+    page_icon=":material/analytics:",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -777,7 +777,7 @@ if not st.session_state.logged_in:
             with st.form("login_form", clear_on_submit=False):
                 username = st.text_input("User Name", placeholder="Masukkan username")
                 password = st.text_input("Password", type="password", placeholder="Masukkan password")
-                submitted = st.form_submit_button("Masuk", type="primary", use_container_width=True)
+                submitted = st.form_submit_button("Masuk", type="primary")
                 if submitted:
                     if check_login(username.strip().lower(), password, df_pengguna):
                         uname_col = find_username_column(df_pengguna)
@@ -972,7 +972,7 @@ if menu == "Transaksi":
             df_show = df_show[df_show["PPTK"].astype(str) == pptk_filter]
 
         st.caption(f"Menampilkan {len(df_show)} dari {len(df_transaksi)} transaksi")
-        st.dataframe(format_df_rupiah(df_show), use_container_width=True, hide_index=True)
+        st.dataframe(format_df_rupiah(df_show), hide_index=True)
     else:
         st.info("Belum ada transaksi.")
 
@@ -1031,7 +1031,6 @@ elif menu == "Dashboard":
                 data=xlsx_bytes,
                 file_name="laporan_simkeu.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                use_container_width=True,
             )
         else:
             st.info("Library openpyxl tidak tersedia.")
@@ -1052,7 +1051,6 @@ elif menu == "Dashboard":
                 data=pdf_bytes,
                 file_name="laporan_simkeu.pdf",
                 mime="application/pdf",
-                use_container_width=True,
             )
         else:
             st.info("Library reportlab tidak tersedia.")
@@ -1123,13 +1121,13 @@ elif menu == "Dashboard":
                 df_kegiatan_display[col] = df_kegiatan_display[col].apply(format_rupiah)
         else:
             df_kegiatan_display = format_df_rupiah(df_kegiatan)
-        st.dataframe(df_kegiatan_display, use_container_width=True, hide_index=True)
+        st.dataframe(df_kegiatan_display, hide_index=True)
     else:
         st.info("Belum ada data sub kegiatan.")
 
     st.subheader("Transaksi Terbaru")
     if not df_transaksi.empty:
-        st.dataframe(format_df_rupiah(df_transaksi), use_container_width=True, hide_index=True)
+        st.dataframe(format_df_rupiah(df_transaksi), hide_index=True)
     else:
         st.info("Belum ada transaksi.")
 
@@ -1153,7 +1151,7 @@ elif menu == "Dashboard":
             df_pptk_summary.columns = ["PPTK", "Realisasi"]
             df_pptk_summary = df_pptk_summary.sort_values("Realisasi", ascending=False)
             df_pptk_summary["Realisasi"] = df_pptk_summary["Realisasi"].apply(format_rupiah)
-            st.dataframe(df_pptk_summary, use_container_width=True, hide_index=True)
+            st.dataframe(df_pptk_summary, hide_index=True)
         else:
             st.info("Belum ada data transaksi untuk ditampilkan per PPTK.")
 
@@ -1185,7 +1183,7 @@ elif menu == "Dashboard":
                 df_over_display["Realisasi"] = df_over_display["Realisasi"].apply(format_rupiah)
                 df_over_display["% Pakai"] = df_over_display["% Pakai"].apply(lambda x: f"{x:.1f}%")
                 st.warning(f"⚠️ Ditemukan {len(df_over_display)} sub kegiatan yang pagunya telah mencapai ≥90%!")
-                st.dataframe(df_over_display, use_container_width=True, hide_index=True)
+                st.dataframe(df_over_display, hide_index=True)
             else:
                 st.info("✅ Tidak ada sub kegiatan yang melebihi 90% pagu.")
         else:
@@ -1198,7 +1196,7 @@ elif menu == "Dashboard":
             if not df_pending.empty:
                 df_pending_display = df_pending[["NO", "SUB KEGIATAN", "PPTK", "NOMINAL", "TANGGAL PENGAJUAN", "STATUS", "URAIAN"]].copy()
                 df_pending_display["NOMINAL"] = df_pending_display["NOMINAL"].apply(format_rupiah)
-                st.dataframe(df_pending_display, use_container_width=True, hide_index=True)
+                st.dataframe(df_pending_display, hide_index=True)
                 st.markdown("### Aksi Approval")
                 col_app1, col_app2 = st.columns(2)
                 with col_app1:
@@ -1314,7 +1312,7 @@ elif menu == "Dashboard":
             df_compare_display["Target (Pagu)"] = df_compare_display["Target (Pagu)"].apply(format_rupiah)
             df_compare_display["Realisasi"] = df_compare_display["Realisasi"].apply(format_rupiah)
             df_compare_display["Sisa Pagu"] = df_compare_display["Sisa Pagu"].apply(format_rupiah)
-            st.dataframe(df_compare_display, use_container_width=True, hide_index=True)
+            st.dataframe(df_compare_display, hide_index=True)
         else:
             st.info("Data pagu atau transaksi tidak cukup untuk perbandingan target vs realisasi.")
 
@@ -1335,7 +1333,7 @@ elif menu == "Dashboard":
             df_rank["Peringkat"] = range(1, len(df_rank) + 1)
             df_rank["Total Realisasi"] = df_rank["Total Realisasi"].apply(format_rupiah)
             df_rank = df_rank[["Peringkat", "PPTK", "Total Realisasi"]]
-            st.dataframe(df_rank, use_container_width=True, hide_index=True)
+            st.dataframe(df_rank, hide_index=True)
         else:
             st.info("Belum ada data PPTK untuk ditampilkan dalam peringkat.")
 
@@ -1386,7 +1384,7 @@ elif menu == "Perubahan Pagu":
     st.divider()
     st.subheader("Daftar Perubahan Pagu")
     if not df_perubahan.empty:
-        st.dataframe(format_df_rupiah(df_perubahan), use_container_width=True, hide_index=True)
+        st.dataframe(format_df_rupiah(df_perubahan), hide_index=True)
     else:
         st.info("Belum ada data perubahan pagu.")
 
@@ -1408,7 +1406,7 @@ elif menu == "Master Data":
     with tab1:
         st.subheader("Data Wilayah")
         if not df_wilayah.empty:
-            st.dataframe(df_wilayah, use_container_width=True, hide_index=True)
+            st.dataframe(df_wilayah, hide_index=True)
             st.divider()
             with st.form("form_add_wilayah"):
                 st.markdown("**Tambah Wilayah**")
@@ -1427,7 +1425,7 @@ elif menu == "Master Data":
     with tab2:
         st.subheader("Data Sub Kegiatan")
         if not df_kegiatan.empty:
-            st.dataframe(format_df_rupiah(df_kegiatan), use_container_width=True, hide_index=True)
+            st.dataframe(format_df_rupiah(df_kegiatan), hide_index=True)
             st.divider()
             with st.form("form_add_kegiatan"):
                 st.markdown("**Tambah Sub Kegiatan**")
@@ -1447,7 +1445,7 @@ elif menu == "Master Data":
     with tab3:
         st.subheader("Data Rekening Belanja")
         if not df_rekening.empty:
-            st.dataframe(df_rekening, use_container_width=True, hide_index=True)
+            st.dataframe(df_rekening, hide_index=True)
             st.divider()
             col_add, col_edit = st.columns(2)
             with col_add:
@@ -1489,7 +1487,7 @@ elif menu == "Master Data":
     with tab4:
         st.subheader("Data Pengguna")
         if not df_pengguna.empty:
-            st.dataframe(df_pengguna, use_container_width=True, hide_index=True)
+            st.dataframe(df_pengguna, hide_index=True)
             st.divider()
             with st.form("form_add_user"):
                 st.markdown("**Tambah Pengguna**")
@@ -1513,7 +1511,7 @@ elif menu == "Master Data":
         if not df_audit.empty:
             # Urutkan terbaru dulu
             df_audit = df_audit.sort_values("WAKTU", ascending=False)
-            st.dataframe(df_audit, use_container_width=True, hide_index=True)
+            st.dataframe(df_audit, hide_index=True)
             st.divider()
             if st.button("Refresh Audit Log"):
                 st.cache_resource.clear()

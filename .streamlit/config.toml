@@ -1,0 +1,92 @@
+[theme]
+# ---------- Warna primer segar ----------
+primaryColor = "#2563eb"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f8fafc"
+textColor = "#0f172a"
+linkColor = "#2563eb"
+borderColor = "#e2e8f0"
+
+# ---------- Warna status ----------
+redColor = "#ef4444"
+orangeColor = "#f59e0b"
+yellowColor = "#eab308"
+greenColor = "#10b981"
+blueColor = "#2563eb"
+violetColor = "#8b5cf6"
+grayColor = "#64748b"
+
+# ---------- Warna grafik (soft / pastel) ----------
+chartCategoricalColors = [
+    "#3b82f6",
+    "#10b981",
+    "#f59e0b",
+    "#8b5cf6",
+    "#ef4444",
+    "#06b6d4",
+    "#84cc16",
+]
+
+chartSequentialColors = [
+    "#eff6ff",
+    "#dbeafe",
+    "#bfdbfe",
+    "#93c5fd",
+    "#60a5fa",
+    "#3b82f6",
+    "#2563eb",
+    "#1d4ed8",
+    "#1e40af",
+    "#1e3a8a",
+]
+
+# ---------- Tipografi ----------
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+headingFont = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@600;700&display=swap"
+codeFont = "'JetBrains Mono':https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
+baseFontSize = 14
+baseFontWeight = 400
+headingFontSizes = ["32px", "24px", "20px", "16px", "14px", "12px"]
+headingFontWeights = [600, 600, 600, 500, 500, 500]
+linkUnderline = false
+
+# ---------- Border & radius ----------
+baseRadius = "8px"
+buttonRadius = "6px"
+showWidgetBorder = true
+showSidebarBorder = true
+
+# ---------- Sidebar ----------
+[theme.sidebar]
+backgroundColor = "#f8fafc"
+secondaryBackgroundColor = "#f1f5f9"
+textColor = "#0f172a"
+borderColor = "#e2e8f0"
+primaryColor = "#2563eb"
+
+# ---------- Mode terang ----------
+[theme.light]
+primaryColor = "#2563eb"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f8fafc"
+textColor = "#0f172a"
+borderColor = "#e2e8f0"
+
+[theme.light.sidebar]
+backgroundColor = "#f8fafc"
+
+# ---------- Mode gelap ----------
+[theme.dark]
+primaryColor = "#60a5fa"
+backgroundColor = "#0f172a"
+secondaryBackgroundColor = "#1e293b"
+textColor = "#f8fafc"
+borderColor = "#334155"
+linkColor = "#93c5fd"
+
+[theme.dark.sidebar]
+backgroundColor = "#0f172a"
+secondaryBackgroundColor = "#1e293b"
+textColor = "#f8fafc"
+borderColor = "#334155"
+primaryColor = "#60a5fa"
