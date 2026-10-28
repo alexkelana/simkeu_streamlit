@@ -58,6 +58,39 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# ===================== WARNA BACKGROUND CARD METRIK =====================
+st.markdown(
+    """
+    <style>
+    /* Setiap card metrik diberi background warna berbeda agar mudah dibedakan */
+    .st-key-metric_subkegiatan [data-testid="stMetric"] {
+        background-color: #e8f0f2 !important;   /* light slate from #264653 */
+        border-left: 4px solid #264653 !important;
+    }
+    .st-key-metric_total_pagu [data-testid="stMetric"] {
+        background-color: #e8f5e9 !important;   /* light green */
+        border-left: 4px solid #10b981 !important;
+    }
+    .st-key-metric_realisasi [data-testid="stMetric"] {
+        background-color: #e0f2f1 !important;   /* light teal from #7A9E9F */
+        border-left: 4px solid #7A9E9F !important;
+    }
+    .st-key-metric_sisa_pagu [data-testid="stMetric"] {
+        background-color: #fff3e0 !important;   /* light amber */
+        border-left: 4px solid #f59e0b !important;
+    }
+    /* Pastikan teks di dalam card tetap kontras */
+    .st-key-metric_subkegiatan [data-testid="stMetric"] *,
+    .st-key-metric_total_pagu [data-testid="stMetric"] *,
+    .st-key-metric_realisasi [data-testid="stMetric"] *,
+    .st-key-metric_sisa_pagu [data-testid="stMetric"] * {
+        color: inherit !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 # ===================== KONEKSI =====================
 @st.cache_resource
 def get_conn():
@@ -1022,11 +1055,12 @@ elif menu == "Dashboard":
     sisa = total_pagu - total_realisasi
     persen = (total_realisasi / total_pagu * 100) if total_pagu else 0
 
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Jumlah Sub Kegiatan", len(df_kegiatan))
-    c2.metric("Total Pagu", format_rupiah(total_pagu))
-    c3.metric("Realisasi", format_rupiah(total_realisasi))
-    c4.metric("Sisa Pagu", format_rupiah(sisa), delta=f"{persen:.1f}% terpakai")
+    # ---- KPI Row — 4 card metrik dengan background warna berbeda ----------
+    with st.container(horizontal=True):
+        c1.metric("Jumlah Sub Kegiatan", len(df_kegiatan), key="metric_subkegiatan", border=True)
+        c2.metric("Total Pagu", format_rupiah(total_pagu), key="metric_total_pagu", border=True)
+        c3.metric("Realisasi", format_rupiah(total_realisasi), key="metric_realisasi", border=True)
+        c4.metric("Sisa Pagu", format_rupiah(sisa), delta=f"{persen:.1f}% terpakai", key="metric_sisa_pagu", border=True)
 
     # ---- Tombol Export (Reporting & Notifikasi P2) ----
     st.divider()
