@@ -93,7 +93,7 @@ st.markdown(
 )
 
 # ===================== STYLING TABEL LIGHT THEME =====================
-if st.context.theme.type == "light":
+if st.context.theme.type in ("light", None):
     st.markdown(
         """
         <style>
@@ -109,14 +109,23 @@ if st.context.theme.type == "light":
         }
 
         /* Header Utama — Deep Dark Slate, teks putih murni untuk kontras maksimal */
-        div[data-testid="stDataFrame"] th,
-        div[data-testid="stTable"] th {
+        div[data-testid="stDataFrame"] thead th,
+        div[data-testid="stTable"] thead th,
+        div[data-testid="stDataFrame"] [role="columnheader"],
+        div[data-testid="stTable"] [role="columnheader"] {
             background-color: #0F172A !important;
             color: #FFFFFF !important;
             font-weight: 700 !important;
             padding: 12px 16px !important;
             text-align: left !important;
             border-bottom: 2px solid #0284C7 !important;
+        }
+        /* Pastikan teks di dalam elemen header juga putih */
+        div[data-testid="stDataFrame"] thead th *,
+        div[data-testid="stTable"] thead th *,
+        div[data-testid="stDataFrame"] [role="columnheader"] *,
+        div[data-testid="stTable"] [role="columnheader"] * {
+            color: #FFFFFF !important;
         }
 
         /* Zebra Striping — Baris Ganjil & Genap (Light) */
