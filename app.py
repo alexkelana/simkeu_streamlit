@@ -57,6 +57,190 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# ===================== THEME / DESAIN MODERN =====================
+st.markdown(
+    """
+    <style>
+    /* ---------- Palet Warna Primer ---------- */
+    :root {
+        --primary: #1a73e8;
+        --primary-hover: #1557b0;
+        --primary-light: #e8f0fe;
+        --secondary: #5f6368;
+        --success: #137333;
+        --warning: #f9ab00;
+        --danger: #d93025;
+        --bg-card: #ffffff;
+        --border: #dadce0;
+        --text-primary: #202124;
+        --text-secondary: #5f6368;
+        --radius: 8px;
+    }
+
+    /* ---------- Sidebar ---------- */
+    .stSidebar {
+        background-color: #f8f9fa !important;
+    }
+    .stSidebar .stRadio > div {
+        background-color: transparent !important;
+    }
+    .stSidebar .stRadio label {
+        color: #202124 !important;
+        font-weight: 500;
+    }
+    .stSidebar .stRadio label[data-baseweb="radio"] {
+        background: transparent !important;
+    }
+    .stSidebar .stRadio [data-baseweb="radio"] > div:first-child {
+        border-color: #1a73e8 !important;
+    }
+    .stSidebar .stRadio [data-baseweb="radio"][aria-checked="true"] > div:first-child {
+        background-color: #1a73e8 !important;
+        border-color: #1a73e8 !important;
+    }
+
+    /* ---------- Judul & Caption ---------- */
+    .stApp h1 {
+        color: #202124 !important;
+        font-weight: 600;
+        letter-spacing: -0.5px;
+    }
+    .stApp h2, .stApp h3 {
+        color: #202124 !important;
+        font-weight: 600;
+    }
+    .stApp p, .stApp span, .stApp label {
+        color: #202124 !important;
+    }
+    .stCaption, .stApp small {
+        color: #5f6368 !important;
+    }
+
+    /* ---------- Metric Cards ---------- */
+    .stMetric {
+        background-color: #ffffff !important;
+        border: 1px solid #dadce0 !important;
+        border-radius: 8px !important;
+        padding: 16px !important;
+        box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.10), 0 0 0 1px rgba(60, 64, 67, 0.04) !important;
+    }
+    .stMetric label {
+        color: #5f6368 !important;
+        font-size: 0.875rem !important;
+        font-weight: 500;
+    }
+    .stMetric div[data-testid="stMetricValue"] {
+        color: #202124 !important;
+        font-weight: 700 !important;
+        font-size: 1.5rem !important;
+    }
+
+    /* ---------- Tombol ---------- */
+    .stButton button {
+        background-color: #1a73e8 !important;
+        color: #ffffff !important;
+        border: none !important;
+        border-radius: 6px !important;
+        font-weight: 500 !important;
+        padding: 0.5rem 1.25rem !important;
+        transition: background 0.2s;
+    }
+    .stButton button:hover {
+        background-color: #1557b0 !important;
+        box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.30);
+    }
+    .stButton button:focus {
+        outline: none !important;
+        box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.30);
+    }
+
+    .stDownloadButton button {
+        background-color: #f8f9fa !important;
+        color: #202124 !important;
+        border: 1px solid #dadce0 !important;
+        border-radius: 6px !important;
+        font-weight: 500 !important;
+        padding: 0.5rem 1.25rem !important;
+    }
+    .stDownloadButton button:hover {
+        background-color: #f1f3f4 !important;
+        border-color: #dadce0 !important;
+    }
+
+    /* ---------- Input & Form ---------- */
+    .stTextInput input,
+    .stTextArea textarea,
+    .stSelectbox div,
+    .stNumberInput input,
+    .stDateInput input {
+        border: 1px solid #dadce0 !important;
+        border-radius: 6px !important;
+        padding: 0.625rem 1rem !important;
+        font-size: 0.9375rem !important;
+        transition: border 0.2s, box-shadow 0.2s;
+    }
+    .stTextInput input:focus,
+    .stTextArea textarea:focus,
+    .stSelectbox div:focus-within,
+    .stNumberInput input:focus {
+        border-color: #1a73e8 !important;
+        box-shadow: 0 0 0 1px #1a73e8 !important;
+        outline: none !important;
+    }
+
+    /* ---------- Tabel ---------- */
+    .stDataFrame th, .stTable th {
+        background-color: #f8f9fa !important;
+        color: #202124 !important;
+        font-weight: 600 !important;
+        font-size: 0.875rem !important;
+        border-bottom: 1px solid #dadce0 !important;
+    }
+    .stDataFrame td, .stTable td {
+        border-bottom: 1px solid #eceff1 !important;
+    }
+
+    /* ---------- Divider ---------- */
+    .stDivider, .stApp hr {
+        border-color: #dadce0 !important;
+        margin: 1.5rem 0 !important;
+    }
+
+    /* ---------- Kontainer Section (untuk grouping) ---------- */
+    .section-card {
+        background-color: #ffffff !important;
+        border: 1px solid #dadce0 !important;
+        border-radius: 8px !important;
+        padding: 1.5rem !important;
+        margin-bottom: 1.5rem !important;
+        box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.10);
+    }
+    .section-title {
+        font-size: 1.125rem !important;
+        font-weight: 600 !important;
+        color: #202124 !important;
+        margin-bottom: 1rem !important;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* ---------- Alert / Info ---------- */
+    .stAlert {
+        border-radius: 6px !important;
+        border: none !important;
+        box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.10);
+    }
+
+    /* ---------- Link ---------- */
+    .stApp a {
+        color: #1a73e8 !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 # ===================== KONEKSI =====================
 @st.cache_resource
 def get_conn():
@@ -832,7 +1016,7 @@ with st.sidebar:
     if pptk_filter and pptk_filter != "Semua PPTK":
         st.caption(f"🔒 Data ditampilkan untuk: **{pptk_filter}**")
     else:
-        st.caption("📊 Data ditampilkan untuk: **Semua PPTK**")
+        st.caption("Data ditampilkan untuk: **Semua PPTK**")
 
     if st.button("Logout"):
         st.session_state.logged_in = False
@@ -1136,10 +1320,10 @@ elif menu == "Dashboard":
     # ===================== FITUR KASUBAG (Hanya ADMIN / KASUBAG_PEK) =====================
     if is_manager(current_user.get("peran", "")):
         st.divider()
-        st.markdown("## 📊 Dashboard Manajerial (Kasubag)")
+        st.markdown("## Dashboard Manajerial (Kasubag)")
 
         # ---- 1. Ringkasan Realisasi per PPTK ----
-        st.subheader("1. Ringkasan Realisasi per PPTK")
+        st.subheader("Ringkasan Realisasi per PPTK")
         if not df_transaksi.empty and nominal_col and "PPTK" in df_transaksi.columns:
             df_transaksi_copy = df_transaksi.copy()
             df_transaksi_copy[NOMINAL_COL_FOR_DASH] = pd.to_numeric(
@@ -1158,7 +1342,7 @@ elif menu == "Dashboard":
             st.info("Belum ada data transaksi untuk ditampilkan per PPTK.")
 
         # ---- 2. Peringatan Pagu Melebihi (≥90%) ----
-        st.subheader("2. Peringatan Pagu Melebihi (≥90%)")
+        st.subheader("Peringatan Pagu Melebihi (≥90%)")
         if not df_kegiatan.empty and not df_transaksi.empty and "pagu_awal" in df_kegiatan.columns and nominal_col:
             df_kegiatan_copy = df_kegiatan.copy()
             df_kegiatan_copy["pagu_awal"] = pd.to_numeric(df_kegiatan_copy["pagu_awal"], errors="coerce").fillna(0)
@@ -1192,7 +1376,7 @@ elif menu == "Dashboard":
             st.info("Data pagu atau transaksi tidak cukup untuk peringatan over budget.")
 
         # ---- 3. Antrian Menunggu Approval ----
-        st.subheader("3. Antrian Transaksi Menunggu Approval")
+        st.subheader("Antrian Transaksi Menunggu Approval")
         if not df_transaksi.empty and "STATUS" in df_transaksi.columns:
             df_pending = df_transaksi[df_transaksi["STATUS"].astype(str).isin(["Draft", "Menunggu Approval"])]
             if not df_pending.empty:
@@ -1267,7 +1451,7 @@ elif menu == "Dashboard":
             st.info("Data transaksi tidak tersedia.")
 
         # ---- 4. Tren Realisasi Bulanan ----
-        st.subheader("4. Tren Realisasi Bulanan")
+        st.subheader("Tren Realisasi Bulanan")
         if not df_transaksi.empty and nominal_col and "TANGGAL PENGAJUAN" in df_transaksi.columns:
             df_trend = df_transaksi.copy()
             df_trend[NOMINAL_COL_FOR_DASH] = pd.to_numeric(
@@ -1291,7 +1475,7 @@ elif menu == "Dashboard":
             st.info("Data transaksi atau tanggal tidak cukup untuk tren bulanan.")
 
         # ---- 5. Perbandingan Target vs Realisasi ----
-        st.subheader("5. Perbandingan Target vs Realisasi per Sub Kegiatan")
+        st.subheader("Perbandingan Target vs Realisasi per Sub Kegiatan")
         if not df_kegiatan.empty and not df_transaksi.empty and "pagu_awal" in df_kegiatan.columns and nominal_col:
             df_compare = df_kegiatan.copy()
             df_compare["pagu_awal"] = pd.to_numeric(df_compare["pagu_awal"], errors="coerce").fillna(0)
@@ -1319,7 +1503,7 @@ elif menu == "Dashboard":
             st.info("Data pagu atau transaksi tidak cukup untuk perbandingan target vs realisasi.")
 
         # ---- 6. Peringkat PPTK Berdasarkan Realisasi ----
-        st.subheader("6. Peringkat PPTK Berdasarkan Realisasi")
+        st.subheader("Peringkat PPTK Berdasarkan Realisasi")
         if not df_transaksi.empty and nominal_col and "PPTK" in df_transaksi.columns:
             df_transaksi_copy = df_transaksi.copy()
             df_transaksi_copy[NOMINAL_COL_FOR_DASH] = pd.to_numeric(
