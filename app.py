@@ -13,6 +13,8 @@ import streamlit as st
 import pandas as pd
 import requests
 import io
+import secrets
+import html
 from datetime import date, datetime
 from streamlit_gsheets import GSheetsConnection
 
@@ -92,8 +94,8 @@ def load_sheet(worksheet_name: str) -> pd.DataFrame:
         else:
             st.error("❌ Tidak dapat terkoneksi ke Google Sheets. Pastikan service account sudah di-share ke spreadsheet dan .streamlit/secrets.toml sudah benar.")
             return pd.DataFrame()
-    except Exception as e:
-        st.error(f"❌ Gagal membaca sheet '{worksheet_name}': {e}")
+    except Exception:
+        st.error(f"❌ Gagal membaca sheet '{worksheet_name}'.")
         return pd.DataFrame()
 
 def update_sheet_data(worksheet_name: str, df: pd.DataFrame) -> bool:
@@ -110,8 +112,8 @@ def update_sheet_data(worksheet_name: str, df: pd.DataFrame) -> bool:
         else:
             st.error("❌ Tidak dapat terkoneksi ke Google Sheets. Data tidak dapat disimpan.")
             return False
-    except Exception as e:
-        st.error(f"❌ Gagal menyimpan ke sheet '{worksheet_name}': {e}")
+    except Exception:
+        st.error(f"❌ Gagal menyimpan ke sheet '{worksheet_name}'.")
         return False
 
 def append_transaksi(new_data: dict, user: str = "Sistem"):
@@ -140,9 +142,9 @@ def append_transaksi(new_data: dict, user: str = "Sistem"):
         conn.update(spreadsheet=SPREADSHEET_URL, worksheet="TRANSAKSI", data=updated)
         write_audit_log("CREATE", "TRANSAKSI", str(next_no), None, new_data, user)
         return True, next_no
-    except Exception as e:
-        st.error(f"❌ Gagal menyimpan transaksi ke Google Sheets: {e}")
-        return False, str(e)
+    except Exception:
+        st.error("❌ Gagal menyimpan transaksi ke Google Sheets.")
+        return False, "Gagal menyimpan transaksi."
 
 def send_telegram(message: str) -> bool:
     """Kirim notifikasi ke Telegram. Return True jika berhasil."""
@@ -157,7 +159,6 @@ def send_telegram(message: str) -> bool:
         payload = {
             "chat_id": chat_id,
             "text": message,
-            "parse_mode": "HTML"
         }
         r = requests.post(url, json=payload, timeout=10)
         return r.status_code == 200
@@ -189,7 +190,10 @@ def check_login(username: str, password: str, df_pengguna: pd.DataFrame = None) 
         if user_row.empty:
             return False
 
-        return str(user_row.iloc[0].get(pass_col, "")) == password
+        return secrets.compare_digest(
+            str(user_row.iloc[0].get(pass_col, "")).strip(),
+            password.strip(),
+        )
     except Exception:
         return False
 
@@ -778,11 +782,18 @@ if not st.session_state.logged_in:
                 password = st.text_input("Password", type="password", placeholder="Masukkan password")
                 submitted = st.form_submit_button("Masuk", type="primary")
                 if submitted:
-                    if check_login(username.strip().lower(), password, df_pengguna):
+                    username_clean = username.strip().lower()
+                    password_clean = password.strip()
+                    # Validasi panjang input
+                    if not username_clean or not password_clean:
+                        st.error("User Name dan password tidak boleh kosong.")
+                    elif len(username_clean) > 100 or len(password_clean) > 100:
+                        st.error("Input terlalu panjang.")
+                    elif check_login(username_clean, password_clean, df_pengguna):
                         uname_col = find_username_column(df_pengguna)
                         if not df_pengguna.empty and uname_col:
                             user_row = df_pengguna[
-                                df_pengguna[uname_col].astype(str).str.strip().str.lower() == username.strip().lower()
+                                df_pengguna[uname_col].astype(str).str.strip().str.lower() == username_clean
                             ]
                             if not user_row.empty:
                                 st.session_state.current_user = user_row.iloc[0].to_dict()
@@ -811,7 +822,7 @@ with st.sidebar:
     st.title("SIMKEU 2027")
     st.caption("Kecamatan Candisari")
     st.divider()
-    st.markdown(f"**{current_user.get('nama', '-')}**")
+    st.text(f"{current_user.get('nama', '-')}")
     st.caption(str(current_user.get("peran", "")).replace("_", " "))
     uname = current_user.get("user_name") or current_user.get("username") or "-"
     st.caption(f"User: {uname}")
@@ -911,7 +922,7 @@ if menu == "Transaksi":
                 success, result = append_transaksi(new_data, user=current_user.get("nama", "Sistem"))
                 if success:
                     pesan = (
-                        f"📌 <b>Transaksi Baru SIMKEU</b>\n"
+                        f"📌 Transaksi Baru SIMKEU\n"
                         f"No: {result}\n"
                         f"PPTK: {pptk}\n"
                         f"Sub Kegiatan: {new_data['SUB KEGIATAN']}\n"
@@ -1078,7 +1089,7 @@ elif menu == "Dashboard":
         st.warning(f"⚠️ Peringatan: Realisasi telah mencapai {persen:.1f}% dari pagu total!")
         try:
             pesan_pagu = (
-                f"🚨 <b>PERINGATAN PAGU HABIS</b>\n"
+                f"🚨 PERINGATAN PAGU HABIS\n"
                 f"Realisasi: {format_rupiah(total_realisasi)} / {format_rupiah(total_pagu)}\n"
                 f"Penggunaan: {persen:.1f}%\n"
                 f"Sisa: {format_rupiah(sisa)}"
