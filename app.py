@@ -43,52 +43,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ===================== HIDE STREAMLIT UI CHROME =====================
-st.markdown(
-    """
-    <style>
-    /* Sembunyikan elemen UI yang tidak diperlukan, pertahankan header untuk tombol toggle sidebar dan menu Settings */
-    .stDeployButton { display: none !important; }
-    /* #MainMenu TIDAK disembunyikan agar menu tiga titik (Settings, Rerun, Clear Cache) tetap accessible */
-    footer { visibility: hidden !important; }
-    div[data-testid="stStatusWidget"] { display: none !important; }
-    /* .stAppToolbar dan header TIDAK disembunyikan agar tombol Settings/tema tetap accessible */
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
-# ===================== STYLING TOMBOL UNDUH =====================
-st.markdown(
-    """
-    <style>
-    /* Styling struktural untuk tombol download — warna diatur oleh config.toml */
-    div[data-testid="stDownloadButton"] > button {
-        border: none !important;
-        border-radius: 8px !important;
-        padding: 0.6rem 1.2rem !important;
-        font-weight: 600 !important;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08) !important;
-        transition: all 0.25s ease-in-out !important;
-    }
-
-    /* Efek saat tombol di-hover */
-    div[data-testid="stDownloadButton"] > button:hover {
-        transform: translateY(-2px) !important;
-        box-shadow: 0 7px 14px rgba(0, 0, 0, 0.15), 0 3px 6px rgba(0, 0, 0, 0.1) !important;
-    }
-
-    /* Efek saat tombol diklik */
-    div[data-testid="stDownloadButton"] > button:active {
-        transform: translateY(1px) !important;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
-# ===================== STYLING TABEL (STRUKTUR + WARNA KONTRAST) =====================
+# ===================== STYLING UI MODERN (LIGHT THEME) =====================
 # Deteksi tema dengan fallback aman
 _theme_type = None
 try:
@@ -99,84 +54,189 @@ except Exception:
 
 _is_dark = _theme_type == "dark"
 
-_header_text_color = "#FFFFFF" if _is_dark else "#0F172A"
-_header_bg = "#1E293B" if _is_dark else "#E2E8F0"
-_row_hover_bg = "#1E3A8A" if _is_dark else "#E0F2FE"
-_row_text_color = "#FFFFFF" if _is_dark else "#334155"
-_row_hover_text = "#FFFFFF" if _is_dark else "#0F172A"
-_border_color = "#334155" if _is_dark else "#E5E7EB"
-_row_even_bg = "#1E293B" if _is_dark else "#F8FAFC"
-_row_odd_bg = "#334155" if _is_dark else "#FFFFFF"
+# Warna untuk light theme (dominan)
+_page_bg = "#0F172A" if _is_dark else "#F8FAFC"
+_card_bg = "#0F172A" if _is_dark else "#FFFFFF"
+_card_border = "#334155" if _is_dark else "#E2E8F0"
+_card_shadow = "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)" if _is_dark else "0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.04)"
+_input_bg = "#1E293B" if _is_dark else "#FFFFFF"
+_input_border = "#475569" if _is_dark else "#CBD5E1"
+_input_focus = "#60A5FA" if _is_dark else "#3B82F6"
+_input_shadow = "0 0 0 3px rgba(96, 165, 250, 0.3)" if _is_dark else "0 0 0 3px rgba(59, 130, 246, 0.3)"
+_primary_btn = "#60A5FA" if _is_dark else "#2563EB"
+_primary_btn_hover = "#3B82F6" if _is_dark else "#1D4ED8"
+_table_header_bg = "#1E293B" if _is_dark else "#F1F5F9"
+_table_header_text = "#F8FAFC" if _is_dark else "#0F172A"
+_table_border = "#334155" if _is_dark else "#E2E8F0"
+_table_row_even = "#1E293B" if _is_dark else "#FFFFFF"
+_table_row_odd = "#0F172A" if _is_dark else "#F8FAFC"
+_table_row_hover = "#1E3A8A" if _is_dark else "#E0F2FE"
+_table_row_hover_text = "#FFFFFF" if _is_dark else "#0F172A"
+_table_cell_text = "#F1F5F9" if _is_dark else "#334155"
+_table_cell_border = "#334155" if _is_dark else "#E2E8F0"
+_sidebar_bg = "#0B1120" if _is_dark else "#F1F5F9"
+_sidebar_text = "#F1F5F9" if _is_dark else "#0F172A"
 
 st.markdown(
-    """
+    f"""
     <style>
     /* ============================================================
-       TABEL UTAMA — DataFrame & Table (struktur + warna kontras)
+       HIDE STREAMLIT UI CHROME
        ============================================================ */
+    .stDeployButton {{ display: none !important; }}
+    footer {{ visibility: hidden !important; }}
+    div[data-testid="stStatusWidget"] {{ display: none !important; }}
 
-    /* Container tabel — hanya struktur */
+    /* ============================================================
+       BACKGROUND UTAMA — Light Gray untuk kedalaman visual
+       ============================================================ */
+    .stApp {{
+        background-color: {_page_bg} !important;
+    }}
+
+    /* ============================================================
+       SIDEBAR — Soft contrast dengan body
+       ============================================================ */
+    [data-testid="stSidebar"] {{
+        background-color: {_sidebar_bg} !important;
+    }}
+    [data-testid="stSidebar"] * {{
+        color: {_sidebar_text} !important;
+    }}
+
+    /* ============================================================
+       KARTU KONTEN — Form, Container, dan Section berdimensi
+       ============================================================ */
+    div[data-testid="stForm"],
+    div[data-testid="stContainer"],
+    div[data-testid="stVerticalBlock"] > div:has(> div[data-testid="stElementContainer"]),
+    .stMarkdownContainer > div {{
+        background-color: {_card_bg} !important;
+        border: 1px solid {_card_border} !important;
+        border-radius: 10px !important;
+        box-shadow: {_card_shadow} !important;
+        padding: 1.5rem !important;
+        margin-bottom: 1.5rem !important;
+    }}
+
+    /* ============================================================
+       TOMBOL UNDUH — Modern, shadow, hover
+       ============================================================ */
+    div[data-testid="stDownloadButton"] > button {{
+        background-color: {_primary_btn} !important;
+        color: #FFFFFF !important;
+        border: none !important;
+        border-radius: 8px !important;
+        padding: 0.6rem 1.2rem !important;
+        font-weight: 600 !important;
+        box-shadow: {_card_shadow} !important;
+        transition: all 0.25s ease-in-out !important;
+    }}
+    div[data-testid="stDownloadButton"] > button:hover {{
+        background-color: {_primary_btn_hover} !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 7px 14px rgba(0, 0, 0, 0.15) !important;
+    }}
+    div[data-testid="stDownloadButton"] > button:active {{
+        transform: translateY(1px) !important;
+    }}
+
+    /* ============================================================
+       TOMBOL PRIMARI — Simpan, Setujui, dll.
+       ============================================================ */
+    .stButton > button[kind="primary"],
+    .stButton > button {{
+        background-color: {_primary_btn} !important;
+        color: #FFFFFF !important;
+        border: none !important;
+        border-radius: 8px !important;
+        padding: 0.6rem 1.25rem !important;
+        font-weight: 600 !important;
+        box-shadow: {_card_shadow} !important;
+        transition: all 0.2s ease !important;
+    }}
+    .stButton > button[kind="primary"]:hover,
+    .stButton > button:hover {{
+        background-color: {_primary_btn_hover} !important;
+        transform: translateY(-1px) !important;
+    }}
+
+    /* ============================================================
+       INPUT FORM — Putih, border halus, focus ring
+       ============================================================ */
+    .stTextInput input,
+    .stTextArea textarea,
+    .stSelectbox div[data-baseweb="select"],
+    .stNumberInput input,
+    .stDateInput input {{
+        background-color: {_input_bg} !important;
+        border: 1px solid {_input_border} !important;
+        border-radius: 6px !important;
+        color: {_sidebar_text} !important;
+        transition: all 0.2s ease !important;
+    }}
+    .stTextInput input:focus,
+    .stTextArea textarea:focus,
+    .stSelectbox div[data-baseweb="select"]:focus-within,
+    .stNumberInput input:focus,
+    .stDateInput input:focus {{
+        border-color: {_input_focus} !important;
+        box-shadow: {_input_shadow} !important;
+        outline: none !important;
+    }}
+
+    /* ============================================================
+       TABEL — Header, zebra striping, hover, kontras
+       ============================================================ */
     div[data-testid="stDataFrame"] table,
-    div[data-testid="stTable"] table {
+    div[data-testid="stTable"] table {{
         border-collapse: separate !important;
         border-spacing: 0 !important;
         width: 100% !important;
         border-radius: 8px !important;
         overflow: hidden !important;
-    }
-
-    /* Header tabel — warna background dari config.toml, teks kontras via CSS */
+    }}
     div[data-testid="stDataFrame"] thead th,
     div[data-testid="stTable"] thead th,
     div[data-testid="stDataFrame"] [role="columnheader"],
-    div[data-testid="stTable"] [role="columnheader"] {
-        background-color: """ + _header_bg + """ !important;
-        color: """ + _header_text_color + """ !important;
-        font-weight: 700 !important;
+    div[data-testid="stTable"] [role="columnheader"] {{
+        background-color: {_table_header_bg} !important;
+        color: {_table_header_text} !important;
+        font-weight: 600 !important;
         padding: 12px 16px !important;
         text-align: left !important;
-        border-bottom: 2px solid """ + _border_color + """ !important;
-    }
-
-    /* Pastikan teks di dalam elemen header (span, div, dll.) juga kontras */
+        border-bottom: 2px solid {_table_border} !important;
+    }}
     div[data-testid="stDataFrame"] thead th *,
     div[data-testid="stTable"] thead th *,
     div[data-testid="stDataFrame"] [role="columnheader"] *,
-    div[data-testid="stTable"] [role="columnheader"] * {
-        color: """ + _header_text_color + """ !important;
-    }
-
-    /* Zebra Striping — Baris Genap & Ganjil */
+    div[data-testid="stTable"] [role="columnheader"] * {{
+        color: {_table_header_text} !important;
+    }}
     div[data-testid="stDataFrame"] tbody tr:nth-child(even),
-    div[data-testid="stTable"] tbody tr:nth-child(even) {
-        background-color: """ + _row_even_bg + """ !important;
-    }
+    div[data-testid="stTable"] tbody tr:nth-child(even) {{
+        background-color: {_table_row_even} !important;
+    }}
     div[data-testid="stDataFrame"] tbody tr:nth-child(odd),
-    div[data-testid="stTable"] tbody tr:nth-child(odd) {
-        background-color: """ + _row_odd_bg + """ !important;
-    }
-
-    /* Efek Hover Baris — Deep Navy Accent */
+    div[data-testid="stTable"] tbody tr:nth-child(odd) {{
+        background-color: {_table_row_odd} !important;
+    }}
     div[data-testid="stDataFrame"] tbody tr:hover,
-    div[data-testid="stTable"] tbody tr:hover {
-        background-color: """ + _row_hover_bg + """ !important;
-        color: """ + _row_hover_text + """ !important;
+    div[data-testid="stTable"] tbody tr:hover {{
+        background-color: {_table_row_hover} !important;
+        color: {_table_row_hover_text} !important;
         transition: background-color 0.2s ease !important;
-    }
-
-    /* Padding & Garis Pemisah Sel */
+    }}
     div[data-testid="stDataFrame"] td,
-    div[data-testid="stTable"] td {
+    div[data-testid="stTable"] td {{
         padding: 10px 16px !important;
-        border-bottom: 1px solid """ + _border_color + """ !important;
-        color: """ + _row_text_color + """ !important;
-    }
-
-    /* Jarak antar tabel / bagian */
+        border-bottom: 1px solid {_table_cell_border} !important;
+        color: {_table_cell_text} !important;
+    }}
     div[data-testid="stDataFrame"],
-    div[data-testid="stTable"] {
+    div[data-testid="stTable"] {{
         margin-bottom: 2rem !important;
-    }
+    }}
     </style>
     """,
     unsafe_allow_html=True,
