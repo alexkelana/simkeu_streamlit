@@ -1,72 +1,53 @@
-"""Unit tests untuk SIMKEU Kecamatan Candisari 2027."""
+"""Unit / integrasi tes untuk SIMKEU Kecamatan Candisari 2027 (AppTest)."""
 
-import sys
 import os
-from unittest.mock import MagicMock
+import sys
+
+import pytest
+from streamlit.testing.v1 import AppTest
 
 
-class FakeSessionState(dict):
-    """session_state palsu yang mendukung akses atribut dan item."""
-
-    def __getattr__(self, key):
-        try:
-            return self[key]
-        except KeyError:
-            return None
-
-    def __setattr__(self, key, value):
-        self[key] = value
-
-    def __contains__(self, key):
-        return True
+def _run_app():
+    return AppTest.from_file("streamlit_app.py").run(timeout=60)
 
 
-# ---- Mock streamlit dan dependensi eksternal sebelum impor app ----
-sys.modules["streamlit"] = MagicMock()
-sys.modules["streamlit_gsheets"] = MagicMock()
+class TestAppRuns:
+    def test_entrypoint_no_exception(self):
+        at = _run_app()
+        assert not at.exception, f"App error: {at.exception}"
 
-st_mock = sys.modules["streamlit"]
-st_mock.session_state = FakeSessionState()
-st_mock.session_state["logged_in"] = True
-st_mock.session_state["current_user"] = {
-    "nama": "Test User",
-    "peran": "ADMIN",
-    "user_name": "testuser",
-}
-st_mock.secrets = {}
+    def test_format_rupiah(self):
+        # Impor fungsi murni tanpa menjalankan UI
+        sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+        from app_pages.helpers import format_rupiah, is_manager
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-
-# Impor app dengan semua mock sudah aktif
-from app import format_rupiah, is_manager  # noqa: E402
-
-
-class TestFormatRupiah:
-    def test_format_rupiah_basic(self):
         assert format_rupiah(1000000) == "Rp 1.000.000"
-
-    def test_format_rupiah_zero(self):
         assert format_rupiah(0) == "Rp 0"
-
-    def test_format_rupiah_negative(self):
         assert format_rupiah(-500000) == "(Rp 500.000)"
-
-    def test_format_rupiah_invalid(self):
+        assert format_rupiah("500,000.00") == "Rp 500.000"
         assert format_rupiah("abc") == "-"
-
-    def test_format_rupiah_none(self):
         assert format_rupiah(None) == "-"
 
+    def test_parse_number(self):
+        sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+        from app_pages.helpers import parse_number
 
-class TestIsManager:
-    def test_admin_is_manager(self):
+        assert parse_number("500,000.00") == 500000.0
+        assert parse_number("50,000,000.00") == 50000000.0
+        assert parse_number("1.234.567,89") == 1234567.89
+        assert parse_number("1,234,567.89") == 1234567.89
+        assert parse_number("") is None
+        assert parse_number("abc") is None
+
+    def test_is_manager(self):
+        sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+        from app_pages.helpers import is_manager
+
         assert is_manager("ADMIN") is True
-
-    def test_kasubag_pek_is_manager(self):
         assert is_manager("KASUBAG_PEK") is True
-
-    def test_pptk_not_manager(self):
         assert is_manager("PPTK") is False
-
-    def test_lowercase_admin(self):
         assert is_manager("admin") is True
+
+    def test_login_page_no_exception(self):
+        at = AppTest.from_file("app_pages/login.py").run(timeout=60)
+        assert not at.exception, f"Login page error: {at.exception}"

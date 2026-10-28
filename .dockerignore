@@ -1,0 +1,35 @@
+# Jangan kirim ke Docker build context
+.git/
+.github/
+.gitignore
+.dockerignore
+
+# Rahasia — jangan pernah masuk build context
+.streamlit/secrets.toml
+.streamlit/config copy.toml
+.env
+.env.*
+*.pem
+*.key
+service-account*.json
+*credentials*.json
+
+# Lokal / tooling
+.agents/
+.claude/
+SKILLS/
+Legacy/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.DS_Store
+simkeu_local.db
+*.log
+
+# Dokumentasi & aset non-runtime
+README.md
+SPECS_SPREADSHEET.md
+tests/
+setup_simkeu_spreadsheet.gs

@@ -1,5 +1,4 @@
 version: "3.8"
-
 services:
   simkeu:
     build: .
@@ -9,4 +8,11 @@ services:
       - STREAMLIT_SERVER_HEADLESS=true
     volumes:
       - .streamlit/secrets.toml:/app/.streamlit/secrets.toml
+      - .streamlit/config.toml:/app/.streamlit/config.toml
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8501/_stcore/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

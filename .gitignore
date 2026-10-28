@@ -38,9 +38,44 @@ env/
 *.swo
 *~
 
+# Tooling agent lokal (symlink ke environment masing-masing)
+.agents/
+.claude/
+SKILLS/
+
 # OS
 .DS_Store
 Thumbs.db
 
 # SQLite lokal (fallback)
 simkeu_local.db
+
+# File cadangan / legacy (jangan commit)
+.streamlit/config copy.toml
+Legacy/
+*.bak
+*.tmp
+*.orig
+*.rej
+
+# Testing & tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# Environment & kredensial (jangan commit)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+service-account*.json
+*credentials*.json
+
+# Log
+*.log
+logs/

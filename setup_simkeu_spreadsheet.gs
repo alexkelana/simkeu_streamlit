@@ -21,7 +21,7 @@ function setupSIMKEUSpreadsheet() {
   const worksheets = [
     {
       name: "PENGGUNA",
-      headers: ["user_name", "password", "nama", "peran"],
+      headers: ["User Name", "Password", "Nama", "Peran"],
       sampleData: [
         ["admin", "admin123", "Admin Sistem", "ADMIN"],
         ["kasubag", "kasubag123", "Kasubag PEM", "KASUBAG_PEK"],
@@ -30,7 +30,7 @@ function setupSIMKEUSpreadsheet() {
     },
     {
       name: "MASTER_WILAYAH",
-      headers: ["nama_wilayah", "kode_wilayah"],
+      headers: ["Nama Wilayah", "Kode Wilayah"],
       sampleData: [
         ["Kecamatan Candisari", "KC01"],
         ["Kelurahan Candisari", "KL01"],
@@ -40,7 +40,7 @@ function setupSIMKEUSpreadsheet() {
     },
     {
       name: "MASTER_REKENING",
-      headers: ["kode_rekening", "uraian_rekening"],
+      headers: ["Kode Rekening", "Uraian Rekening"],
       sampleData: [
         ["5.2.1.01", "Honorarium PPTK"],
         ["5.2.1.02", "Bahan Tulis Kantor"],
@@ -50,12 +50,12 @@ function setupSIMKEUSpreadsheet() {
       ]
     },
     {
-      name: "MASTER_KEGIATAN",
-      headers: ["subkegiatan", "nama_kegiatan", "pagu_awal"],
+      name: "MASTER_SUB_KEGIATAN",
+      headers: ["Kode Sub Kegiatan", "Sub Kegiatan", "Pagu Awal", "Sisa Pagu"],
       sampleData: [
-        ["SK001", "Pembinaan Keuangan Desa", 50000000],
-        ["SK002", "Pengawasan Keuangan", 30000000],
-        ["SK003", "Pelaporan Keuangan", 20000000]
+        ["SK001", "Pembinaan Keuangan Desa", 50000000, '=C2 - SUMIFS(TRANSAKSI!G:G, TRANSAKSI!B:B, A2 & "*", TRANSAKSI!K:K, "Disetujui")'],
+        ["SK002", "Pengawasan Keuangan", 30000000, '=C3 - SUMIFS(TRANSAKSI!G:G, TRANSAKSI!B:B, A3 & "*", TRANSAKSI!K:K, "Disetujui")'],
+        ["SK003", "Pelaporan Keuangan", 20000000, '=C4 - SUMIFS(TRANSAKSI!G:G, TRANSAKSI!B:B, A4 & "*", TRANSAKSI!K:K, "Disetujui")']
       ]
     },
     {
@@ -64,15 +64,16 @@ function setupSIMKEUSpreadsheet() {
         "NO", "SUB KEGIATAN", "KODE REKENING BELANJA",
         "PENGELOMPOKAN BELANJA (#)", "URAIAN",
         "JENIS TRANSAKSI (UP/GU/LS)", "NOMINAL",
-        "TANGGAL PENGAJUAN", "BUKTI DUKUNG SPJ", "PPTK"
+        "TANGGAL PENGAJUAN", "BUKTI DUKUNG SPJ", "PPTK",
+        "STATUS", "DISETUJUI_OLEH", "TANGGAL_APPROVAL"
       ],
       sampleData: []
     },
     {
       name: "PERUBAHAN_PAGU",
       headers: [
-        "SUB KEGIATAN", "PAGU_BARU", "ALASAN",
-        "DIAJUKAN_OLEH", "TANGGAL_AJUAN", "STATUS"
+        "SUB KEGIATAN", "PAGU BARU", "ALASAN",
+        "DIAJUKAN OLEH", "TANGGAL AJUAN", "STATUS"
       ],
       sampleData: []
     }
@@ -148,7 +149,7 @@ function setupSIMKEUSpreadsheet() {
   
   // Buat worksheet AUDIT_LOG (kosong, akan diisi oleh aplikasi)
   const auditSheet = spreadsheet.insertSheet("AUDIT_LOG");
-  const auditHeaders = ["WAKTU", "USER", "AKSI", "TABEL", "RECORD_ID", "OLD_VALUES", "NEW_VALUES"];
+  const auditHeaders = ["WAKTU", "USER", "AKSI", "TABEL", "RECORD_ID", "OLD VALUES", "NEW VALUES"];
   const auditHeaderRange = auditSheet.getRange(1, 1, 1, auditHeaders.length);
   auditHeaderRange.setValues([auditHeaders]);
   auditHeaderRange.setFontWeight("bold");
@@ -175,7 +176,7 @@ function setupSIMKEUSpreadsheet() {
   Logger.log("- PENGGUNA");
   Logger.log("- MASTER_WILAYAH");
   Logger.log("- MASTER_REKENING");
-  Logger.log("- MASTER_KEGIATAN");
+  Logger.log("- MASTER_SUB_KEGIATAN");
   Logger.log("- TRANSAKSI");
   Logger.log("- PERUBAHAN_PAGU");
   Logger.log("- AUDIT_LOG");
@@ -183,7 +184,7 @@ function setupSIMKEUSpreadsheet() {
   Logger.log("Langkah berikutnya:");
   Logger.log("1. Share spreadsheet ini ke email Service Account (akses Editor)");
   Logger.log("2. Masukkan URL spreadsheet ke .streamlit/secrets.toml");
-  Logger.log("3. Jalankan aplikasi: streamlit run app.py");
+  Logger.log("3. Jalankan aplikasi: streamlit run streamlit_app.py");
   
   return spreadsheet;
 }
