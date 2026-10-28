@@ -2,7 +2,7 @@
 # ---------- Palet Warna Instansi (Khusus) ----------
 # primaryColor: teal/navy khas instansi — tombol utama, link, elemen interaktif
 primaryColor = "#1a5f7a"
-backgroundColor = "#ffffff"
+backgroundColor = "#f8fafc"
 secondaryBackgroundColor = "#f4f7f9"
 textColor = "#1f2937"
 linkColor = "#1a5f7a"
@@ -20,7 +20,8 @@ grayColor = "#6b7280"
 
 # ---------- Warna grafik variatif (bervariasi antar kategori) ----------
 chartCategoricalColors = [
-    "#1a5f7a",   # teal instansi
+    "#0284C7",   # sky blue — warna utama grafik
+    "#0D9488",   # teal — aksen sekunder
     "#2a9d8f",   # teal muda
     "#e9c46a",   # kuning muda
     "#f4a261",   # oranye muda
@@ -73,7 +74,7 @@ primaryColor = "#7fd3e8"      # aksen terang di sidebar
 # ---------- Mode terang ----------
 [theme.light]
 primaryColor = "#1a5f7a"
-backgroundColor = "#ffffff"
+backgroundColor = "#f8fafc"
 secondaryBackgroundColor = "#f4f7f9"
 textColor = "#1f2937"
 borderColor = "#d1d5db"

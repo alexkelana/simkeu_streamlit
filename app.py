@@ -107,15 +107,15 @@ st.markdown(
         border: 1px solid #E5E7EB;
     }
 
-    /* Header Utama — Deep Blue / Ocean Navy */
+    /* Header Utama — Deep Dark Slate, teks putih murni untuk kontras maksimal */
     div[data-testid="stDataFrame"] th,
     div[data-testid="stTable"] th {
-        background-color: #1E3A8A !important;
+        background-color: #0F172A !important;
         color: #FFFFFF !important;
-        font-weight: 600 !important;
+        font-weight: 700 !important;
         padding: 12px 16px !important;
         text-align: left !important;
-        border-bottom: 2px solid #1E40AF !important;
+        border-bottom: 2px solid #0284C7 !important;
     }
 
     /* Zebra Striping — Baris Ganjil & Genap */
@@ -128,10 +128,11 @@ st.markdown(
         background-color: #FFFFFF !important;
     }
 
-    /* Efek Hover Baris — Soft Sky Blue */
+    /* Efek Hover Baris — Deep Navy Accent */
     div[data-testid="stDataFrame"] tbody tr:hover,
     div[data-testid="stTable"] tbody tr:hover {
-        background-color: #E0F2FE !important;
+        background-color: #1E3A8A !important;
+        color: #FFFFFF !important;
         transition: background-color 0.2s ease;
     }
 
