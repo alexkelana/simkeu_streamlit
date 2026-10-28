@@ -1,36 +1,39 @@
 [theme]
-# ---------- Warna primer segar ----------
-primaryColor = "#2563eb"
+# ---------- Palet Warna SWAST — Hospital Handover Report ----------
+# primaryColor: dark slate (#264653) — header tabel, judul, elemen interaktif
+primaryColor = "#264653"
 backgroundColor = "#ffffff"
-secondaryBackgroundColor = "#f8fafc"
-textColor = "#0f172a"
-linkColor = "#2563eb"
-borderColor = "#e2e8f0"
+secondaryBackgroundColor = "#f0f2f6"
+textColor = "#264653"
+linkColor = "#264653"
+borderColor = "#d9d9d9"
 
 # ---------- Warna status ----------
 redColor = "#ef4444"
 orangeColor = "#f59e0b"
 yellowColor = "#eab308"
 greenColor = "#10b981"
-blueColor = "#2563eb"
+blueColor = "#264653"
 violetColor = "#8b5cf6"
 grayColor = "#64748b"
 
-# ---------- Warna grafik (soft / pastel) ----------
+# ---------- Warna grafik (berdasarkan SWAST) ----------
+# #264653 = dark slate (completed handovers bar)
+# #7A9E9F = muted teal (predicted arrivals bar)
 chartCategoricalColors = [
-    "#3b82f6",
-    "#10b981",
-    "#f59e0b",
-    "#8b5cf6",
-    "#ef4444",
-    "#06b6d4",
-    "#84cc16",
+    "#264653",
+    "#7A9E9F",
+    "#2a9d8f",
+    "#e9c46a",
+    "#f4a261",
+    "#e76f51",
+    "#64748b",
 ]
 
 chartSequentialColors = [
-    "#eff6ff",
-    "#dbeafe",
-    "#bfdbfe",
+    "#f0f9ff",
+    "#e0f2fe",
+    "#bae0fd",
     "#93c5fd",
     "#60a5fa",
     "#3b82f6",
@@ -41,9 +44,9 @@ chartSequentialColors = [
 ]
 
 # ---------- Tipografi ----------
-font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-headingFont = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@600;700&display=swap"
-codeFont = "'JetBrains Mono':https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
+font = "sans serif"
+headingFont = "sans serif"
+codeFont = "monospace"
 baseFontSize = 14
 baseFontWeight = 400
 headingFontSizes = ["32px", "24px", "20px", "16px", "14px", "12px"]
@@ -51,42 +54,42 @@ headingFontWeights = [600, 600, 600, 500, 500, 500]
 linkUnderline = false
 
 # ---------- Border & radius ----------
-baseRadius = "8px"
-buttonRadius = "6px"
+baseRadius = "6px"
+buttonRadius = "4px"
 showWidgetBorder = true
 showSidebarBorder = true
 
 # ---------- Sidebar ----------
 [theme.sidebar]
-backgroundColor = "#f8fafc"
-secondaryBackgroundColor = "#f1f5f9"
-textColor = "#0f172a"
-borderColor = "#e2e8f0"
-primaryColor = "#2563eb"
+backgroundColor = "#f0f2f6"
+secondaryBackgroundColor = "#e9ecef"
+textColor = "#264653"
+borderColor = "#d9d9d9"
+primaryColor = "#264653"
 
 # ---------- Mode terang ----------
 [theme.light]
-primaryColor = "#2563eb"
+primaryColor = "#264653"
 backgroundColor = "#ffffff"
-secondaryBackgroundColor = "#f8fafc"
-textColor = "#0f172a"
-borderColor = "#e2e8f0"
+secondaryBackgroundColor = "#f0f2f6"
+textColor = "#264653"
+borderColor = "#d9d9d9"
 
 [theme.light.sidebar]
-backgroundColor = "#f8fafc"
+backgroundColor = "#f0f2f6"
 
 # ---------- Mode gelap ----------
 [theme.dark]
-primaryColor = "#60a5fa"
-backgroundColor = "#0f172a"
-secondaryBackgroundColor = "#1e293b"
-textColor = "#f8fafc"
-borderColor = "#334155"
+primaryColor = "#7A9E9F"
+backgroundColor = "#1a1a2e"
+secondaryBackgroundColor = "#264653"
+textColor = "#f0f2f6"
+borderColor = "#4a4a6a"
 linkColor = "#93c5fd"
 
 [theme.dark.sidebar]
-backgroundColor = "#0f172a"
-secondaryBackgroundColor = "#1e293b"
-textColor = "#f8fafc"
-borderColor = "#334155"
-primaryColor = "#60a5fa"
+backgroundColor = "#1a1a2e"
+secondaryBackgroundColor = "#264653"
+textColor = "#f0f2f6"
+borderColor = "#4a4a6a"
+primaryColor = "#7A9E9F"
