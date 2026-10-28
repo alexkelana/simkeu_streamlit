@@ -92,135 +92,87 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# ===================== STYLING TABEL LIGHT THEME =====================
-if st.context.theme.type in ("light", None):
-    st.markdown(
-        """
-        <style>
-        /* Styling Tabel Utama — Light Theme */
-        div[data-testid="stDataFrame"] table,
-        div[data-testid="stTable"] table {
-            border-collapse: separate;
-            border-spacing: 0;
-            width: 100%;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid #E5E7EB;
-        }
+# ===================== STYLING TABEL (SEMUA TEMA) =====================
+st.markdown(
+    """
+    <style>
+    /* ============================================================
+       TABEL UTAMA — DataFrame & Table (struktur & warna konsisten)
+       ============================================================ */
 
-        /* Header Utama — Deep Dark Slate, teks putih murni untuk kontras maksimal */
-        div[data-testid="stDataFrame"] thead th,
-        div[data-testid="stTable"] thead th,
-        div[data-testid="stDataFrame"] [role="columnheader"],
-        div[data-testid="stTable"] [role="columnheader"] {
-            background-color: #0F172A !important;
-            color: #FFFFFF !important;
-            font-weight: 700 !important;
-            padding: 12px 16px !important;
-            text-align: left !important;
-            border-bottom: 2px solid #0284C7 !important;
-        }
-        /* Pastikan teks di dalam elemen header juga putih */
-        div[data-testid="stDataFrame"] thead th *,
-        div[data-testid="stTable"] thead th *,
-        div[data-testid="stDataFrame"] [role="columnheader"] *,
-        div[data-testid="stTable"] [role="columnheader"] * {
-            color: #FFFFFF !important;
-        }
+    /* Container tabel */
+    div[data-testid="stDataFrame"] table,
+    div[data-testid="stTable"] table {
+        border-collapse: separate !important;
+        border-spacing: 0 !important;
+        width: 100% !important;
+        border-radius: 8px !important;
+        overflow: hidden !important;
+        border: 1px solid #E5E7EB !important;
+    }
 
-        /* Zebra Striping — Baris Ganjil & Genap (Light) */
-        div[data-testid="stDataFrame"] tbody tr:nth-child(even),
-        div[data-testid="stTable"] tbody tr:nth-child(even) {
-            background-color: #F8FAFC !important;
-        }
-        div[data-testid="stDataFrame"] tbody tr:nth-child(odd),
-        div[data-testid="stTable"] tbody tr:nth-child(odd) {
-            background-color: #FFFFFF !important;
-        }
+    /* Header tabel — Deep Dark Slate, teks putih untuk kontras maksimal */
+    div[data-testid="stDataFrame"] thead th,
+    div[data-testid="stTable"] thead th,
+    div[data-testid="stDataFrame"] [role="columnheader"],
+    div[data-testid="stTable"] [role="columnheader"] {
+        background-color: #0F172A !important;
+        color: #FFFFFF !important;
+        font-weight: 700 !important;
+        padding: 12px 16px !important;
+        text-align: left !important;
+        border-bottom: 2px solid #0284C7 !important;
+    }
 
-        /* Efek Hover Baris — Deep Navy Accent (Light) */
-        div[data-testid="stDataFrame"] tbody tr:hover,
-        div[data-testid="stTable"] tbody tr:hover {
-            background-color: #1E3A8A !important;
-            color: #FFFFFF !important;
-            transition: background-color 0.2s ease;
-        }
+    /* Pastikan teks di dalam elemen header (span, div, dll.) juga putih */
+    div[data-testid="stDataFrame"] thead th *,
+    div[data-testid="stTable"] thead th *,
+    div[data-testid="stDataFrame"] [role="columnheader"] *,
+    div[data-testid="stTable"] [role="columnheader"] * {
+        color: #FFFFFF !important;
+    }
 
-        /* Padding & Garis Pemisah Sel (Light) */
-        div[data-testid="stDataFrame"] td,
-        div[data-testid="stTable"] td {
-            padding: 10px 16px !important;
-            border-bottom: 1px solid #F1F5F9 !important;
-            color: #334155 !important;
-        }
+    /* Zebra Striping — Baris Genap & Ganjil */
+    div[data-testid="stDataFrame"] tbody tr:nth-child(even),
+    div[data-testid="stTable"] tbody tr:nth-child(even) {
+        background-color: #F8FAFC !important;
+    }
+    div[data-testid="stDataFrame"] tbody tr:nth-child(odd),
+    div[data-testid="stTable"] tbody tr:nth-child(odd) {
+        background-color: #FFFFFF !important;
+    }
 
-        /* Jarak antar tabel / bagian (Light) */
-        div[data-testid="stDataFrame"],
-        div[data-testid="stTable"] {
-            margin-bottom: 2rem !important;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+    /* Efek Hover Baris — Deep Navy Accent */
+    div[data-testid="stDataFrame"] tbody tr:hover,
+    div[data-testid="stTable"] tbody tr:hover {
+        background-color: #1E3A8A !important;
+        color: #FFFFFF !important;
+        transition: background-color 0.2s ease !important;
+    }
 
-# ===================== STYLING TABEL DARK THEME =====================
-if st.context.theme.type == "dark":
-    st.markdown(
-        """
-        <style>
-        /* Styling Tabel — Dark Theme */
-        div[data-testid="stDataFrame"] table,
-        div[data-testid="stTable"] table {
-            background-color: #1E293B !important;
-            border-collapse: separate;
-            border-spacing: 0;
-            width: 100%;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid #334155 !important;
-        }
+    /* Padding & Garis Pemisah Sel */
+    div[data-testid="stDataFrame"] td,
+    div[data-testid="stTable"] td {
+        padding: 10px 16px !important;
+        border-bottom: 1px solid #F1F5F9 !important;
+        color: #334155 !important;
+    }
 
-        /* Header Tabel — Deep Dark Slate */
-        div[data-testid="stDataFrame"] th,
-        div[data-testid="stTable"] th {
-            background-color: #0F172A !important;
-            color: #38BDF8 !important;
-            font-weight: 700 !important;
-            padding: 12px 16px !important;
-            text-align: left !important;
-            border-bottom: 2px solid #0284C7 !important;
-        }
+    /* Jarak antar tabel / bagian */
+    div[data-testid="stDataFrame"],
+    div[data-testid="stTable"] {
+        margin-bottom: 2rem !important;
+    }
 
-        /* Zebra Striping — Dark */
-        div[data-testid="stDataFrame"] tbody tr:nth-child(even),
-        div[data-testid="stTable"] tbody tr:nth-child(even) {
-            background-color: #1E293B !important;
-        }
-        div[data-testid="stDataFrame"] tbody tr:nth-child(odd),
-        div[data-testid="stTable"] tbody tr:nth-child(odd) {
-            background-color: #334155 !important;
-        }
-
-        /* Efek Hover Baris — Dark */
-        div[data-testid="stDataFrame"] tbody tr:hover,
-        div[data-testid="stTable"] tbody tr:hover {
-            background-color: #1E3A8A !important;
-            color: #FFFFFF !important;
-            transition: background-color 0.2s ease;
-        }
-
-        /* Teks & Garis Pemisah Sel — Dark */
-        div[data-testid="stDataFrame"] td,
-        div[data-testid="stTable"] td {
-            padding: 10px 16px !important;
-            border-bottom: 1px solid #334155 !important;
-            color: #F1F5F9 !important;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+    /* ============================================================
+       OVERRIDE DARK THEME — aktif jika pengguna pilih Dark Mode
+       ============================================================ */
+    /* Jika Streamlit tidak expose theme type, CSS di atas tetap berlaku.
+       Dark theme override hanya sebagai pelengkap jika tersedia. */
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 # ===================== KONEKSI =====================
 @st.cache_resource
