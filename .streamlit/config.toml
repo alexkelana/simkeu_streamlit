@@ -1,107 +1,76 @@
+# Professional Financial Dashboard Theme (Dark)
+# Conservative, trustworthy palette with clear data visualization
+
 [theme]
-# ---------- Palet Warna Instansi (Khusus) ----------
-# primaryColor: teal/navy khas instansi — tombol utama, link, elemen interaktif
-primaryColor = "#1a5f7a"
-backgroundColor = "#f8fafc"
-secondaryBackgroundColor = "#f4f7f9"
-textColor = "#1f2937"
-linkColor = "#1a5f7a"
-borderColor = "#d1d5db"
-
-# ---------- Warna status / indikator persentase ----------
-# Digunakan oleh st.badge, colored markdown, dan indikator penggunaan pagu
-redColor = "#dc2626"      # mendekati batas 90% / melebihi
-orangeColor = "#d97706"   # penggunaan menengah (perhatian)
-yellowColor = "#ca8a04"
-greenColor = "#15803d"    # penggunaan aman / rendah
-blueColor = "#1a5f7a"
-violetColor = "#6d28d9"
-grayColor = "#6b7280"
-
-# ---------- Warna grafik variatif (bervariasi antar kategori) ----------
-chartCategoricalColors = [
-    "#0284C7",   # sky blue — warna utama grafik
-    "#0D9488",   # teal — aksen sekunder
-    "#2a9d8f",   # teal muda
-    "#e9c46a",   # kuning muda
-    "#f4a261",   # oranye muda
-    "#e76f51",   # merah muda
-    "#8ab6d6",   # biru langit
-    "#64748b",   # abu-abu
-]
-
-chartSequentialColors = [
-    "#eef4f7",
-    "#dbe7ed",
-    "#c8dae3",
-    "#b5cdda",
-    "#a2c0d1",
-    "#8fb3c8",
-    "#7ca6bf",
-    "#6999b6",
-    "#568cad",
-    "#437fa4",
-]
-
-# ---------- Tipografi ----------
-font = "sans serif"
-headingFont = "sans serif"
-codeFont = "monospace"
-baseFontSize = 14
-baseFontWeight = 400
-headingFontSizes = ["32px", "24px", "20px", "16px", "14px", "12px"]
-headingFontWeights = [600, 600, 600, 500, 500, 500]
-linkUnderline = false
-
-# ---------- Border & radius ----------
-baseRadius = "6px"
-buttonRadius = "4px"
+base = "dark"
+primaryColor = "#60A5FA"             # Bright blue for dark mode
+backgroundColor = "#0F172A"          # Deep slate
+secondaryBackgroundColor = "#1E293B" # Slightly lighter slate
+codeBackgroundColor = "#1E293B"
+textColor = "#F1F5F9"                # Light text
+linkColor = "#60A5FA"
+borderColor = "#334155"
+codeTextColor = "#CBD5E1"
 showWidgetBorder = true
 showSidebarBorder = true
+baseRadius = "6px"                   # Subtle rounding - professional, not playful
+buttonRadius = "6px"
 
-# ---------- Header Tabel (Dataframe) ----------
-dataframeHeaderBackgroundColor = "#1a5f7a"
-dataframeBorderColor = "#d1d5db"
+# Typography - Clean, professional fonts
+font = "'Inter':https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+headingFont = "'Inter':https://fonts.googleapis.com/css2?family=Inter:wght@600;700&display=swap"
+codeFont = "'JetBrains Mono':https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
+baseFontSize = 14
+baseFontWeight = 400
+codeFontSize = "13px"
+headingFontSizes = ["28px", "22px", "18px", "16px", "14px", "12px"]
+headingFontWeights = [700, 600, 600, 600, 500, 500]
+linkUnderline = false
 
-# ---------- Sidebar Navigasi (kontras tegas) ----------
-[theme.sidebar]
-backgroundColor = "#0f2d3e"   # navy gelap untuk memisahkan menu dari area utama
-secondaryBackgroundColor = "#16455b"
-textColor = "#e5edf1"
-borderColor = "#1f4a5e"
-primaryColor = "#7fd3e8"      # aksen terang di sidebar
+# Semantic colors for financial indicators
+greenColor = "#34D399"  # Positive/gains - bright green
+redColor = "#F87171"    # Negative/losses - bright red
+yellowColor = "#FBBF24" # Warnings/caution
+orangeColor = "#FB923C" # Alerts
+blueColor = "#60A5FA"   # Informational
+violetColor = "#A78BFA" # Accent/highlights
+grayColor = "#94A3B8"   # Neutral/secondary text
 
-# ---------- Mode terang ----------
-[theme.light]
-primaryColor = "#1a5f7a"
-backgroundColor = "#f8fafc"
-secondaryBackgroundColor = "#f4f7f9"
-textColor = "#1f2937"
-borderColor = "#d1d5db"
-dataframeHeaderBackgroundColor = "#1a5f7a"
-dataframeBorderColor = "#d1d5db"
+# Chart colors - Distinguishable palette for financial data
+chartCategoricalColors = [
+    "#60A5FA",
+    "#34D399",
+    "#A78BFA",
+    "#F87171",
+    "#FBBF24",
+    "#38BDF8",
+    "#94A3B8",
+    "#FB923C",
+]
 
-[theme.light.sidebar]
-backgroundColor = "#0f2d3e"
-secondaryBackgroundColor = "#16455b"
-textColor = "#e5edf1"
-borderColor = "#1f4a5e"
-primaryColor = "#7fd3e8"
+# Sequential colors for heatmaps (blue gradient)
+chartSequentialColors = [
+    "#0C4A6E",
+    "#075985",
+    "#0369A1",
+    "#0284C7",
+    "#0EA5E9",
+    "#38BDF8",
+    "#7DD3FC",
+    "#BAE6FD",
+    "#E0F2FE",
+    "#F0F9FF",
+]
 
-# ---------- Mode gelap ----------
-[theme.dark]
-primaryColor = "#7fd3e8"
-backgroundColor = "#0f172a"
-secondaryBackgroundColor = "#1e293b"
-textColor = "#f8fafc"
-borderColor = "#334155"
-linkColor = "#93c5fd"
-dataframeHeaderBackgroundColor = "#7fd3e8"
+# Dataframe styling
 dataframeBorderColor = "#334155"
+dataframeHeaderBackgroundColor = "#1E293B"
 
-[theme.dark.sidebar]
-backgroundColor = "#0b1a25"
-secondaryBackgroundColor = "#16313e"
-textColor = "#e5edf1"
-borderColor = "#1f4a5e"
-primaryColor = "#7fd3e8"
+# Sidebar
+[theme.sidebar]
+backgroundColor = "#0F172A"
+secondaryBackgroundColor = "#1E293B"
+codeBackgroundColor = "#1E293B"
+textColor = "#F1F5F9"
+borderColor = "#334155"
+primaryColor = "#60A5FA"
