@@ -62,24 +62,20 @@ st.markdown(
 st.markdown(
     """
     <style>
-    /* Styling khusus untuk tombol download */
+    /* Styling struktural untuk tombol download — warna diatur oleh config.toml */
     div[data-testid="stDownloadButton"] > button {
-        background: linear-gradient(135deg, #0f4c81 0%, #002b49 100%) !important;
-        color: white !important;
         border: none !important;
         border-radius: 8px !important;
         padding: 0.6rem 1.2rem !important;
         font-weight: 600 !important;
-        /* Efek bayangan lembut agar tidak flat */
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08) !important;
         transition: all 0.25s ease-in-out !important;
     }
 
-    /* Efek saat tombol di-hover (kursor di atas tombol) */
+    /* Efek saat tombol di-hover */
     div[data-testid="stDownloadButton"] > button:hover {
-        transform: translateY(-2px) !important; /* Tombol melayang sedikit ke atas */
-        box-shadow: 0 7px 14px rgba(0, 0, 0, 0.18), 0 3px 6px rgba(0, 0, 0, 0.12) !important;
-        background: linear-gradient(135deg, #135d9d 0%, #00385f 100%) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 7px 14px rgba(0, 0, 0, 0.15), 0 3px 6px rgba(0, 0, 0, 0.1) !important;
     }
 
     /* Efek saat tombol diklik */
@@ -92,15 +88,15 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# ===================== STYLING TABEL (SEMUA TEMA) =====================
+# ===================== STYLING TABEL (STRUKTUR SAJA) =====================
 st.markdown(
     """
     <style>
     /* ============================================================
-       TABEL UTAMA — DataFrame & Table (struktur & warna konsisten)
+       TABEL UTAMA — DataFrame & Table (hanya struktur, warna dari config.toml)
        ============================================================ */
 
-    /* Container tabel */
+    /* Container tabel — hanya struktur, tanpa warna */
     div[data-testid="stDataFrame"] table,
     div[data-testid="stTable"] table {
         border-collapse: separate !important;
@@ -108,54 +104,45 @@ st.markdown(
         width: 100% !important;
         border-radius: 8px !important;
         overflow: hidden !important;
-        border: 1px solid #E5E7EB !important;
     }
 
-    /* Header tabel — Deep Dark Slate, teks putih untuk kontras maksimal */
+    /* Header tabel — hanya struktur, warna teks dari config.toml */
     div[data-testid="stDataFrame"] thead th,
     div[data-testid="stTable"] thead th,
     div[data-testid="stDataFrame"] [role="columnheader"],
     div[data-testid="stTable"] [role="columnheader"] {
-        background-color: #0F172A !important;
-        color: #FFFFFF !important;
         font-weight: 700 !important;
         padding: 12px 16px !important;
         text-align: left !important;
-        border-bottom: 2px solid #0284C7 !important;
+        border-bottom: 2px solid !important;
     }
 
-    /* Pastikan teks di dalam elemen header (span, div, dll.) juga putih */
+    /* Pastikan teks di dalam elemen header juga mengikuti config.toml */
     div[data-testid="stDataFrame"] thead th *,
     div[data-testid="stTable"] thead th *,
     div[data-testid="stDataFrame"] [role="columnheader"] *,
     div[data-testid="stTable"] [role="columnheader"] * {
-        color: #FFFFFF !important;
     }
 
-    /* Zebra Striping — Baris Genap & Ganjil */
+    /* Zebra Striping — hanya struktur, warna baris dari config.toml */
     div[data-testid="stDataFrame"] tbody tr:nth-child(even),
     div[data-testid="stTable"] tbody tr:nth-child(even) {
-        background-color: #F8FAFC !important;
     }
     div[data-testid="stDataFrame"] tbody tr:nth-child(odd),
     div[data-testid="stTable"] tbody tr:nth-child(odd) {
-        background-color: #FFFFFF !important;
     }
 
-    /* Efek Hover Baris — Deep Navy Accent */
+    /* Efek Hover Baris — hanya struktur, warna hover dari config.toml */
     div[data-testid="stDataFrame"] tbody tr:hover,
     div[data-testid="stTable"] tbody tr:hover {
-        background-color: #1E3A8A !important;
-        color: #FFFFFF !important;
         transition: background-color 0.2s ease !important;
     }
 
-    /* Padding & Garis Pemisah Sel */
+    /* Padding & Garis Pemisah Sel — hanya struktur */
     div[data-testid="stDataFrame"] td,
     div[data-testid="stTable"] td {
         padding: 10px 16px !important;
-        border-bottom: 1px solid #F1F5F9 !important;
-        color: #334155 !important;
+        border-bottom: 1px solid !important;
     }
 
     /* Jarak antar tabel / bagian */
@@ -163,12 +150,6 @@ st.markdown(
     div[data-testid="stTable"] {
         margin-bottom: 2rem !important;
     }
-
-    /* ============================================================
-       OVERRIDE DARK THEME — aktif jika pengguna pilih Dark Mode
-       ============================================================ */
-    /* Jika Streamlit tidak expose theme type, CSS di atas tetap berlaku.
-       Dark theme override hanya sebagai pelengkap jika tersedia. */
     </style>
     """,
     unsafe_allow_html=True,
