@@ -45,9 +45,9 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    /* Sembunyikan elemen UI yang tidak diperlukan, pertahankan header untuk tombol toggle sidebar */
+    /* Sembunyikan elemen UI yang tidak diperlukan, pertahankan header untuk tombol toggle sidebar dan menu Settings */
     .stDeployButton { display: none !important; }
-    #MainMenu { visibility: hidden !important; }
+    /* #MainMenu TIDAK disembunyikan agar menu tiga titik (Settings, Rerun, Clear Cache) tetap accessible */
     footer { visibility: hidden !important; }
     div[data-testid="stStatusWidget"] { display: none !important; }
     /* .stAppToolbar dan header TIDAK disembunyikan agar tombol Settings/tema tetap accessible */
