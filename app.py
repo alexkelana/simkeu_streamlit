@@ -153,6 +153,64 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# ===================== STYLING TABEL DARK THEME =====================
+if st.context.theme.type == "dark":
+    st.markdown(
+        """
+        <style>
+        /* Styling Tabel — Dark Theme */
+        div[data-testid="stDataFrame"] table,
+        div[data-testid="stTable"] table {
+            background-color: #1E293B !important;
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #334155 !important;
+        }
+
+        /* Header Tabel — Deep Dark Slate */
+        div[data-testid="stDataFrame"] th,
+        div[data-testid="stTable"] th {
+            background-color: #0F172A !important;
+            color: #38BDF8 !important;
+            font-weight: 700 !important;
+            padding: 12px 16px !important;
+            text-align: left !important;
+            border-bottom: 2px solid #0284C7 !important;
+        }
+
+        /* Zebra Striping — Dark */
+        div[data-testid="stDataFrame"] tbody tr:nth-child(even),
+        div[data-testid="stTable"] tbody tr:nth-child(even) {
+            background-color: #1E293B !important;
+        }
+        div[data-testid="stDataFrame"] tbody tr:nth-child(odd),
+        div[data-testid="stTable"] tbody tr:nth-child(odd) {
+            background-color: #334155 !important;
+        }
+
+        /* Efek Hover Baris — Dark */
+        div[data-testid="stDataFrame"] tbody tr:hover,
+        div[data-testid="stTable"] tbody tr:hover {
+            background-color: #1E3A8A !important;
+            color: #FFFFFF !important;
+            transition: background-color 0.2s ease;
+        }
+
+        /* Teks & Garis Pemisah Sel — Dark */
+        div[data-testid="stDataFrame"] td,
+        div[data-testid="stTable"] td {
+            padding: 10px 16px !important;
+            border-bottom: 1px solid #334155 !important;
+            color: #F1F5F9 !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
 # ===================== KONEKSI =====================
 @st.cache_resource
 def get_conn():
