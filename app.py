@@ -1057,10 +1057,10 @@ elif menu == "Dashboard":
 
     # ---- KPI Row — 4 card metrik dengan background warna berbeda ----------
     with st.container(horizontal=True):
-        c1.metric("Jumlah Sub Kegiatan", len(df_kegiatan), key="metric_subkegiatan", border=True)
-        c2.metric("Total Pagu", format_rupiah(total_pagu), key="metric_total_pagu", border=True)
-        c3.metric("Realisasi", format_rupiah(total_realisasi), key="metric_realisasi", border=True)
-        c4.metric("Sisa Pagu", format_rupiah(sisa), delta=f"{persen:.1f}% terpakai", key="metric_sisa_pagu", border=True)
+        st.metric("Jumlah Sub Kegiatan", len(df_kegiatan), key="metric_subkegiatan", border=True)
+        st.metric("Total Pagu", format_rupiah(total_pagu), key="metric_total_pagu", border=True)
+        st.metric("Realisasi", format_rupiah(total_realisasi), key="metric_realisasi", border=True)
+        st.metric("Sisa Pagu", format_rupiah(sisa), delta=f"{persen:.1f}% terpakai", key="metric_sisa_pagu", border=True)
 
     # ---- Tombol Export (Reporting & Notifikasi P2) ----
     st.divider()
