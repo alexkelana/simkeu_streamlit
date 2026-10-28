@@ -1,46 +1,45 @@
 [theme]
-# ---------- Palet Warna SWAST — Hospital Handover Report ----------
-# primaryColor: dark slate (#264653) — header tabel, judul, elemen interaktif
-primaryColor = "#264653"
+# ---------- Palet Warna Instansi (Khusus) ----------
+# primaryColor: teal/navy khas instansi — tombol utama, link, elemen interaktif
+primaryColor = "#1a5f7a"
 backgroundColor = "#ffffff"
-secondaryBackgroundColor = "#f0f2f6"
-textColor = "#264653"
-linkColor = "#264653"
-borderColor = "#d9d9d9"
+secondaryBackgroundColor = "#f4f7f9"
+textColor = "#1f2937"
+linkColor = "#1a5f7a"
+borderColor = "#d1d5db"
 
-# ---------- Warna status ----------
-redColor = "#ef4444"
-orangeColor = "#f59e0b"
-yellowColor = "#eab308"
-greenColor = "#10b981"
-blueColor = "#264653"
-violetColor = "#8b5cf6"
-grayColor = "#64748b"
+# ---------- Warna status / indikator persentase ----------
+# Digunakan oleh st.badge, colored markdown, dan indikator penggunaan pagu
+redColor = "#dc2626"      # mendekati batas 90% / melebihi
+orangeColor = "#d97706"   # penggunaan menengah (perhatian)
+yellowColor = "#ca8a04"
+greenColor = "#15803d"    # penggunaan aman / rendah
+blueColor = "#1a5f7a"
+violetColor = "#6d28d9"
+grayColor = "#6b7280"
 
-# ---------- Warna grafik (berdasarkan SWAST) ----------
-# #264653 = dark slate (completed handovers bar)
-# #7A9E9F = muted teal (predicted arrivals bar)
+# ---------- Warna grafik variatif (bervariasi antar kategori) ----------
 chartCategoricalColors = [
-    "#264653",
-    "#7A9E9F",
-    "#2a9d8f",
-    "#e9c46a",
-    "#f4a261",
-    "#e76f51",
-    "#64748b",
+    "#1a5f7a",   # teal instansi
+    "#2a9d8f",   # teal muda
+    "#e9c46a",   # kuning muda
+    "#f4a261",   # oranye muda
+    "#e76f51",   # merah muda
+    "#8ab6d6",   # biru langit
+    "#64748b",   # abu-abu
 ]
 
 chartSequentialColors = [
-    "#f0f9ff",
-    "#e0f2fe",
-    "#bae0fd",
-    "#93c5fd",
-    "#60a5fa",
-    "#3b82f6",
-    "#2563eb",
-    "#1d4ed8",
-    "#1e40af",
-    "#1e3a8a",
+    "#eef4f7",
+    "#dbe7ed",
+    "#c8dae3",
+    "#b5cdda",
+    "#a2c0d1",
+    "#8fb3c8",
+    "#7ca6bf",
+    "#6999b6",
+    "#568cad",
+    "#437fa4",
 ]
 
 # ---------- Tipografi ----------
@@ -59,37 +58,49 @@ buttonRadius = "4px"
 showWidgetBorder = true
 showSidebarBorder = true
 
-# ---------- Sidebar ----------
+# ---------- Header Tabel (Dataframe) ----------
+dataframeHeaderBackgroundColor = "#1a5f7a"
+dataframeBorderColor = "#d1d5db"
+
+# ---------- Sidebar Navigasi (kontras tegas) ----------
 [theme.sidebar]
-backgroundColor = "#f0f2f6"
-secondaryBackgroundColor = "#e9ecef"
-textColor = "#264653"
-borderColor = "#d9d9d9"
-primaryColor = "#264653"
+backgroundColor = "#0f2d3e"   # navy gelap untuk memisahkan menu dari area utama
+secondaryBackgroundColor = "#16455b"
+textColor = "#e5edf1"
+borderColor = "#1f4a5e"
+primaryColor = "#7fd3e8"      # aksen terang di sidebar
 
 # ---------- Mode terang ----------
 [theme.light]
-primaryColor = "#264653"
+primaryColor = "#1a5f7a"
 backgroundColor = "#ffffff"
-secondaryBackgroundColor = "#f0f2f6"
-textColor = "#264653"
-borderColor = "#d9d9d9"
+secondaryBackgroundColor = "#f4f7f9"
+textColor = "#1f2937"
+borderColor = "#d1d5db"
+dataframeHeaderBackgroundColor = "#1a5f7a"
+dataframeBorderColor = "#d1d5db"
 
 [theme.light.sidebar]
-backgroundColor = "#f0f2f6"
+backgroundColor = "#0f2d3e"
+secondaryBackgroundColor = "#16455b"
+textColor = "#e5edf1"
+borderColor = "#1f4a5e"
+primaryColor = "#7fd3e8"
 
 # ---------- Mode gelap ----------
 [theme.dark]
-primaryColor = "#7A9E9F"
-backgroundColor = "#1a1a2e"
-secondaryBackgroundColor = "#264653"
-textColor = "#f0f2f6"
-borderColor = "#4a4a6a"
+primaryColor = "#7fd3e8"
+backgroundColor = "#0f172a"
+secondaryBackgroundColor = "#1e293b"
+textColor = "#f8fafc"
+borderColor = "#334155"
 linkColor = "#93c5fd"
+dataframeHeaderBackgroundColor = "#7fd3e8"
+dataframeBorderColor = "#334155"
 
 [theme.dark.sidebar]
-backgroundColor = "#1a1a2e"
-secondaryBackgroundColor = "#264653"
-textColor = "#f0f2f6"
-borderColor = "#4a4a6a"
-primaryColor = "#7A9E9F"
+backgroundColor = "#0b1a25"
+secondaryBackgroundColor = "#16313e"
+textColor = "#e5edf1"
+borderColor = "#1f4a5e"
+primaryColor = "#7fd3e8"

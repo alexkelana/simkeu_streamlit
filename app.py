@@ -752,29 +752,10 @@ if "logged_in" not in st.session_state:
 df_pengguna = get_df("PENGGUNA")
 
 if not st.session_state.logged_in:
-    # Atur jarak dari atas biar form login berada di tengah layar
-    st.markdown(
-        """
-        <style>
-        .block-container {
-            padding-top: 12vh;
-            padding-bottom: 2rem;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-
     col1, col2, col3 = st.columns([2, 1, 2])
     with col2:
-        st.markdown(
-            "<h2 style='text-align: center; margin-bottom: 0;'>SIMKEU 2027</h2>",
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            "<p style='text-align: center; color: gray; margin-top: 0; margin-bottom: 1.5rem;'>Kecamatan Candisari</p>",
-            unsafe_allow_html=True,
-        )
+        st.title("SIMKEU 2027", text_alignment="center")
+        st.caption("Kecamatan Candisari")
 
         with st.container(border=True):
             with st.form("login_form", clear_on_submit=False):
