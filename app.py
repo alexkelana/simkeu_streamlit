@@ -49,9 +49,8 @@ st.markdown(
     .stDeployButton { display: none !important; }
     #MainMenu { visibility: hidden !important; }
     footer { visibility: hidden !important; }
-    .stAppToolbar { visibility: hidden !important; }
     div[data-testid="stStatusWidget"] { display: none !important; }
-    /* header[data-testid="stHeader"] TIDAK disembunyikan agar tombol buka/tutup sidebar tetap bisa digunakan */
+    /* .stAppToolbar dan header TIDAK disembunyikan agar tombol Settings/tema tetap accessible */
     </style>
     """,
     unsafe_allow_html=True,
