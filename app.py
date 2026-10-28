@@ -92,67 +92,68 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# ===================== STYLING TABEL PROFESIONAL =====================
-st.markdown(
-    """
-    <style>
-    /* Styling Tabel Utama — DataFrame & Table */
-    div[data-testid="stDataFrame"] table,
-    div[data-testid="stTable"] table {
-        border-collapse: separate;
-        border-spacing: 0;
-        width: 100%;
-        border-radius: 8px;
-        overflow: hidden;
-        border: 1px solid #E5E7EB;
-    }
+# ===================== STYLING TABEL LIGHT THEME =====================
+if st.context.theme.type == "light":
+    st.markdown(
+        """
+        <style>
+        /* Styling Tabel Utama — Light Theme */
+        div[data-testid="stDataFrame"] table,
+        div[data-testid="stTable"] table {
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #E5E7EB;
+        }
 
-    /* Header Utama — Deep Dark Slate, teks putih murni untuk kontras maksimal */
-    div[data-testid="stDataFrame"] th,
-    div[data-testid="stTable"] th {
-        background-color: #0F172A !important;
-        color: #FFFFFF !important;
-        font-weight: 700 !important;
-        padding: 12px 16px !important;
-        text-align: left !important;
-        border-bottom: 2px solid #0284C7 !important;
-    }
+        /* Header Utama — Deep Dark Slate, teks putih murni untuk kontras maksimal */
+        div[data-testid="stDataFrame"] th,
+        div[data-testid="stTable"] th {
+            background-color: #0F172A !important;
+            color: #FFFFFF !important;
+            font-weight: 700 !important;
+            padding: 12px 16px !important;
+            text-align: left !important;
+            border-bottom: 2px solid #0284C7 !important;
+        }
 
-    /* Zebra Striping — Baris Ganjil & Genap */
-    div[data-testid="stDataFrame"] tbody tr:nth-child(even),
-    div[data-testid="stTable"] tbody tr:nth-child(even) {
-        background-color: #F8FAFC !important;
-    }
-    div[data-testid="stDataFrame"] tbody tr:nth-child(odd),
-    div[data-testid="stTable"] tbody tr:nth-child(odd) {
-        background-color: #FFFFFF !important;
-    }
+        /* Zebra Striping — Baris Ganjil & Genap (Light) */
+        div[data-testid="stDataFrame"] tbody tr:nth-child(even),
+        div[data-testid="stTable"] tbody tr:nth-child(even) {
+            background-color: #F8FAFC !important;
+        }
+        div[data-testid="stDataFrame"] tbody tr:nth-child(odd),
+        div[data-testid="stTable"] tbody tr:nth-child(odd) {
+            background-color: #FFFFFF !important;
+        }
 
-    /* Efek Hover Baris — Deep Navy Accent */
-    div[data-testid="stDataFrame"] tbody tr:hover,
-    div[data-testid="stTable"] tbody tr:hover {
-        background-color: #1E3A8A !important;
-        color: #FFFFFF !important;
-        transition: background-color 0.2s ease;
-    }
+        /* Efek Hover Baris — Deep Navy Accent (Light) */
+        div[data-testid="stDataFrame"] tbody tr:hover,
+        div[data-testid="stTable"] tbody tr:hover {
+            background-color: #1E3A8A !important;
+            color: #FFFFFF !important;
+            transition: background-color 0.2s ease;
+        }
 
-    /* Padding & Garis Pemisah Sel */
-    div[data-testid="stDataFrame"] td,
-    div[data-testid="stTable"] td {
-        padding: 10px 16px !important;
-        border-bottom: 1px solid #F1F5F9 !important;
-        color: #334155 !important;
-    }
+        /* Padding & Garis Pemisah Sel (Light) */
+        div[data-testid="stDataFrame"] td,
+        div[data-testid="stTable"] td {
+            padding: 10px 16px !important;
+            border-bottom: 1px solid #F1F5F9 !important;
+            color: #334155 !important;
+        }
 
-    /* Jarak antar tabel / bagian */
-    div[data-testid="stDataFrame"],
-    div[data-testid="stTable"] {
-        margin-bottom: 2rem !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+        /* Jarak antar tabel / bagian (Light) */
+        div[data-testid="stDataFrame"],
+        div[data-testid="stTable"] {
+            margin-bottom: 2rem !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
 # ===================== STYLING TABEL DARK THEME =====================
 if st.context.theme.type == "dark":
