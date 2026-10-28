@@ -752,48 +752,65 @@ if "logged_in" not in st.session_state:
 df_pengguna = get_df("PENGGUNA")
 
 if not st.session_state.logged_in:
-    col1, col2, col3 = st.columns([2, 1, 2])
+    # CSS responsif untuk form login — fleksibel di HP & Desktop (tanpa kekecilan/kepotongan)
+    st.markdown(
+        """
+        <style>
+        div[data-testid="stForm"] {
+            width: 90vw;
+            max-width: 450px;
+            min-width: 280px;
+            margin: 2rem auto;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.title("SIMKEU 2027", text_alignment="center")
         st.caption("Kecamatan Candisari")
 
-        with st.container(border=True):
-            with st.form("login_form", clear_on_submit=False):
-                username = st.text_input("User Name", placeholder="Masukkan username")
-                password = st.text_input("Password", type="password", placeholder="Masukkan password")
-                submitted = st.form_submit_button("Masuk", type="primary")
-                if submitted:
-                    username_clean = username.strip().lower()
-                    password_clean = password.strip()
-                    # Validasi panjang input
-                    if not username_clean or not password_clean:
-                        st.error("User Name dan password tidak boleh kosong.")
-                    elif len(username_clean) > 100 or len(password_clean) > 100:
-                        st.error("Input terlalu panjang.")
-                    elif check_login(username_clean, password_clean, df_pengguna):
-                        uname_col = find_username_column(df_pengguna)
-                        if not df_pengguna.empty and uname_col:
-                            user_row = df_pengguna[
-                                df_pengguna[uname_col].astype(str).str.strip().str.lower() == username_clean
-                            ]
-                            if not user_row.empty:
-                                st.session_state.current_user = user_row.iloc[0].to_dict()
-                                st.session_state.logged_in = True
-                                # Inisialisasi filter PPTK otomatis setelah login
-                                user_peran_login = str(user_row.iloc[0].get("peran", "")).upper()
-                                if user_peran_login == "PPTK":
-                                    nama_login = str(user_row.iloc[0].get("nama", "")).strip()
-                                    uname_login = str(user_row.iloc[0].get("user_name") or user_row.iloc[0].get("username", "")).strip()
-                                    st.session_state.pptk_filter = f"{nama_login} ({uname_login})" if uname_login else nama_login
-                                else:
-                                    st.session_state.pptk_filter = "Semua PPTK"
-                                st.rerun()
+        with st.form("login_form", clear_on_submit=False):
+            username = st.text_input("User Name", placeholder="Masukkan username")
+            password = st.text_input("Password", type="password", placeholder="Masukkan password")
+            submitted = st.form_submit_button("Masuk", type="primary", width="stretch")
+            if submitted:
+                username_clean = username.strip().lower()
+                password_clean = password.strip()
+                # Validasi panjang input
+                if not username_clean or not password_clean:
+                    st.error("User Name dan password tidak boleh kosong.")
+                elif len(username_clean) > 100 or len(password_clean) > 100:
+                    st.error("Input terlalu panjang.")
+                elif check_login(username_clean, password_clean, df_pengguna):
+                    uname_col = find_username_column(df_pengguna)
+                    if not df_pengguna.empty and uname_col:
+                        user_row = df_pengguna[
+                            df_pengguna[uname_col].astype(str).str.strip().str.lower() == username_clean
+                        ]
+                        if not user_row.empty:
+                            st.session_state.current_user = user_row.iloc[0].to_dict()
+                            st.session_state.logged_in = True
+                            # Inisialisasi filter PPTK otomatis setelah login
+                            user_peran_login = str(user_row.iloc[0].get("peran", "")).upper()
+                            if user_peran_login == "PPTK":
+                                nama_login = str(user_row.iloc[0].get("nama", "")).strip()
+                                uname_login = str(user_row.iloc[0].get("user_name") or user_row.iloc[0].get("username", "")).strip()
+                                st.session_state.pptk_filter = f"{nama_login} ({uname_login})" if uname_login else nama_login
                             else:
-                                st.error("User Name tidak ditemukan di sheet PENGGUNA.")
+                                st.session_state.pptk_filter = "Semua PPTK"
+                            st.rerun()
                         else:
-                            st.error("Sheet PENGGUNA tidak memiliki kolom user_name atau kosong.")
+                            st.error("User Name tidak ditemukan di sheet PENGGUNA.")
                     else:
-                        st.error("User Name atau password salah.")
+                        st.error("Sheet PENGGUNA tidak memiliki kolom user_name atau kosong.")
+                else:
+                    st.error("User Name atau password salah.")
     st.stop()
 
 current_user = st.session_state.current_user
