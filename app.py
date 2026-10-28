@@ -62,28 +62,25 @@ st.markdown(
 st.markdown(
     """
     <style>
-    /* Setiap card metrik diberi background warna berbeda agar mudah dibedakan */
-    .st-key-metric_subkegiatan [data-testid="stMetric"] {
+    /* Setiap card metrik di KPI Row diberi background warna berbeda via nth-child */
+    .st-key-kpi_row [data-testid="stMetric"]:nth-child(1) {
         background-color: #e8f0f2 !important;   /* light slate from #264653 */
         border-left: 4px solid #264653 !important;
     }
-    .st-key-metric_total_pagu [data-testid="stMetric"] {
+    .st-key-kpi_row [data-testid="stMetric"]:nth-child(2) {
         background-color: #e8f5e9 !important;   /* light green */
         border-left: 4px solid #10b981 !important;
     }
-    .st-key-metric_realisasi [data-testid="stMetric"] {
+    .st-key-kpi_row [data-testid="stMetric"]:nth-child(3) {
         background-color: #e0f2f1 !important;   /* light teal from #7A9E9F */
         border-left: 4px solid #7A9E9F !important;
     }
-    .st-key-metric_sisa_pagu [data-testid="stMetric"] {
+    .st-key-kpi_row [data-testid="stMetric"]:nth-child(4) {
         background-color: #fff3e0 !important;   /* light amber */
         border-left: 4px solid #f59e0b !important;
     }
     /* Pastikan teks di dalam card tetap kontras */
-    .st-key-metric_subkegiatan [data-testid="stMetric"] *,
-    .st-key-metric_total_pagu [data-testid="stMetric"] *,
-    .st-key-metric_realisasi [data-testid="stMetric"] *,
-    .st-key-metric_sisa_pagu [data-testid="stMetric"] * {
+    .st-key-kpi_row [data-testid="stMetric"] * {
         color: inherit !important;
     }
     </style>
@@ -1056,11 +1053,11 @@ elif menu == "Dashboard":
     persen = (total_realisasi / total_pagu * 100) if total_pagu else 0
 
     # ---- KPI Row — 4 card metrik dengan background warna berbeda ----------
-    with st.container(horizontal=True):
-        st.metric("Jumlah Sub Kegiatan", len(df_kegiatan), key="metric_subkegiatan", border=True)
-        st.metric("Total Pagu", format_rupiah(total_pagu), key="metric_total_pagu", border=True)
-        st.metric("Realisasi", format_rupiah(total_realisasi), key="metric_realisasi", border=True)
-        st.metric("Sisa Pagu", format_rupiah(sisa), delta=f"{persen:.1f}% terpakai", key="metric_sisa_pagu", border=True)
+    with st.container(horizontal=True, key="kpi_row"):
+        st.metric("Jumlah Sub Kegiatan", len(df_kegiatan), border=True)
+        st.metric("Total Pagu", format_rupiah(total_pagu), border=True)
+        st.metric("Realisasi", format_rupiah(total_realisasi), border=True)
+        st.metric("Sisa Pagu", format_rupiah(sisa), delta=f"{persen:.1f}% terpakai", border=True)
 
     # ---- Tombol Export (Reporting & Notifikasi P2) ----
     st.divider()
