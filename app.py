@@ -45,14 +45,13 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    /* Sembunyikan teks "running ..." dan toolbar kanan atas */
+    /* Sembunyikan elemen UI yang tidak diperlukan, pertahankan header untuk tombol toggle sidebar */
     .stDeployButton { display: none !important; }
-    header[data-testid="stHeader"] { display: none !important; }
     #MainMenu { visibility: hidden !important; }
     footer { visibility: hidden !important; }
     .stAppToolbar { visibility: hidden !important; }
-    /* Sembunyikan indikator running di pojok kanan atas */
     div[data-testid="stStatusWidget"] { display: none !important; }
+    /* header[data-testid="stHeader"] TIDAK disembunyikan agar tombol buka/tutup sidebar tetap bisa digunakan */
     </style>
     """,
     unsafe_allow_html=True,
