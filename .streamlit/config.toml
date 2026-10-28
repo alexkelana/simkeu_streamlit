@@ -86,6 +86,8 @@ linkColor = "#2563EB"
 borderColor = "#E2E8F0"
 codeBackgroundColor = "#F1F5F9"
 codeTextColor = "#334155"
+dataframeHeaderBackgroundColor = "#E2E8F0"
+dataframeBorderColor = "#CBD5E1"
 
 [theme.light.sidebar]
 # Sidebar sedikit lebih gelap dari body untuk soft contrast

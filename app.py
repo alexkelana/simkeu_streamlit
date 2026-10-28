@@ -88,15 +88,34 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# ===================== STYLING TABEL (STRUKTUR SAJA) =====================
+# ===================== STYLING TABEL (STRUKTUR + WARNA KONTRAST) =====================
+# Deteksi tema dengan fallback aman
+_theme_type = None
+try:
+    _theme_type = getattr(getattr(st, "context", None), "theme", None)
+    _theme_type = getattr(_theme_type, "type", None) or None
+except Exception:
+    _theme_type = None
+
+_is_dark = _theme_type == "dark"
+
+_header_text_color = "#FFFFFF" if _is_dark else "#0F172A"
+_header_bg = "#1E293B" if _is_dark else "#E2E8F0"
+_row_hover_bg = "#1E3A8A" if _is_dark else "#E0F2FE"
+_row_text_color = "#FFFFFF" if _is_dark else "#334155"
+_row_hover_text = "#FFFFFF" if _is_dark else "#0F172A"
+_border_color = "#334155" if _is_dark else "#E5E7EB"
+_row_even_bg = "#1E293B" if _is_dark else "#F8FAFC"
+_row_odd_bg = "#334155" if _is_dark else "#FFFFFF"
+
 st.markdown(
     """
     <style>
     /* ============================================================
-       TABEL UTAMA — DataFrame & Table (hanya struktur, warna dari config.toml)
+       TABEL UTAMA — DataFrame & Table (struktur + warna kontras)
        ============================================================ */
 
-    /* Container tabel — hanya struktur, tanpa warna */
+    /* Container tabel — hanya struktur */
     div[data-testid="stDataFrame"] table,
     div[data-testid="stTable"] table {
         border-collapse: separate !important;
@@ -106,43 +125,51 @@ st.markdown(
         overflow: hidden !important;
     }
 
-    /* Header tabel — hanya struktur, warna teks dari config.toml */
+    /* Header tabel — warna background dari config.toml, teks kontras via CSS */
     div[data-testid="stDataFrame"] thead th,
     div[data-testid="stTable"] thead th,
     div[data-testid="stDataFrame"] [role="columnheader"],
     div[data-testid="stTable"] [role="columnheader"] {
+        background-color: """ + _header_bg + """ !important;
+        color: """ + _header_text_color + """ !important;
         font-weight: 700 !important;
         padding: 12px 16px !important;
         text-align: left !important;
-        border-bottom: 2px solid !important;
+        border-bottom: 2px solid """ + _border_color + """ !important;
     }
 
-    /* Pastikan teks di dalam elemen header juga mengikuti config.toml */
+    /* Pastikan teks di dalam elemen header (span, div, dll.) juga kontras */
     div[data-testid="stDataFrame"] thead th *,
     div[data-testid="stTable"] thead th *,
     div[data-testid="stDataFrame"] [role="columnheader"] *,
     div[data-testid="stTable"] [role="columnheader"] * {
+        color: """ + _header_text_color + """ !important;
     }
 
-    /* Zebra Striping — hanya struktur, warna baris dari config.toml */
+    /* Zebra Striping — Baris Genap & Ganjil */
     div[data-testid="stDataFrame"] tbody tr:nth-child(even),
     div[data-testid="stTable"] tbody tr:nth-child(even) {
+        background-color: """ + _row_even_bg + """ !important;
     }
     div[data-testid="stDataFrame"] tbody tr:nth-child(odd),
     div[data-testid="stTable"] tbody tr:nth-child(odd) {
+        background-color: """ + _row_odd_bg + """ !important;
     }
 
-    /* Efek Hover Baris — hanya struktur, warna hover dari config.toml */
+    /* Efek Hover Baris — Deep Navy Accent */
     div[data-testid="stDataFrame"] tbody tr:hover,
     div[data-testid="stTable"] tbody tr:hover {
+        background-color: """ + _row_hover_bg + """ !important;
+        color: """ + _row_hover_text + """ !important;
         transition: background-color 0.2s ease !important;
     }
 
-    /* Padding & Garis Pemisah Sel — hanya struktur */
+    /* Padding & Garis Pemisah Sel */
     div[data-testid="stDataFrame"] td,
     div[data-testid="stTable"] td {
         padding: 10px 16px !important;
-        border-bottom: 1px solid !important;
+        border-bottom: 1px solid """ + _border_color + """ !important;
+        color: """ + _row_text_color + """ !important;
     }
 
     /* Jarak antar tabel / bagian */
