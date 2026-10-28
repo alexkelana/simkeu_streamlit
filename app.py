@@ -749,37 +749,60 @@ if "logged_in" not in st.session_state:
 df_pengguna = get_df("PENGGUNA")
 
 if not st.session_state.logged_in:
-    st.title("Login SIMKEU 2027")
-    st.caption("Kecamatan Candisari")
+    # Atur jarak dari atas biar form login berada di tengah layar
+    st.markdown(
+        """
+        <style>
+        .block-container {
+            padding-top: 12vh;
+            padding-bottom: 2rem;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    with st.form("login_form"):
-        username = st.text_input("User Name")
-        password = st.text_input("Password", type="password")
-        if st.form_submit_button("Masuk", type="primary"):
-            if check_login(username.strip().lower(), password, df_pengguna):
-                uname_col = find_username_column(df_pengguna)
-                if not df_pengguna.empty and uname_col:
-                    user_row = df_pengguna[
-                        df_pengguna[uname_col].astype(str).str.strip().str.lower() == username.strip().lower()
-                    ]
-                    if not user_row.empty:
-                        st.session_state.current_user = user_row.iloc[0].to_dict()
-                        st.session_state.logged_in = True
-                        # Inisialisasi filter PPTK otomatis setelah login
-                        user_peran_login = str(user_row.iloc[0].get("peran", "")).upper()
-                        if user_peran_login == "PPTK":
-                            nama_login = str(user_row.iloc[0].get("nama", "")).strip()
-                            uname_login = str(user_row.iloc[0].get("user_name") or user_row.iloc[0].get("username", "")).strip()
-                            st.session_state.pptk_filter = f"{nama_login} ({uname_login})" if uname_login else nama_login
+    col1, col2, col3 = st.columns([2, 1, 2])
+    with col2:
+        st.markdown(
+            "<h2 style='text-align: center; margin-bottom: 0;'>SIMKEU 2027</h2>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            "<p style='text-align: center; color: gray; margin-top: 0; margin-bottom: 1.5rem;'>Kecamatan Candisari</p>",
+            unsafe_allow_html=True,
+        )
+
+        with st.container(border=True):
+            with st.form("login_form", clear_on_submit=False):
+                username = st.text_input("User Name", placeholder="Masukkan username")
+                password = st.text_input("Password", type="password", placeholder="Masukkan password")
+                submitted = st.form_submit_button("Masuk", type="primary", use_container_width=True)
+                if submitted:
+                    if check_login(username.strip().lower(), password, df_pengguna):
+                        uname_col = find_username_column(df_pengguna)
+                        if not df_pengguna.empty and uname_col:
+                            user_row = df_pengguna[
+                                df_pengguna[uname_col].astype(str).str.strip().str.lower() == username.strip().lower()
+                            ]
+                            if not user_row.empty:
+                                st.session_state.current_user = user_row.iloc[0].to_dict()
+                                st.session_state.logged_in = True
+                                # Inisialisasi filter PPTK otomatis setelah login
+                                user_peran_login = str(user_row.iloc[0].get("peran", "")).upper()
+                                if user_peran_login == "PPTK":
+                                    nama_login = str(user_row.iloc[0].get("nama", "")).strip()
+                                    uname_login = str(user_row.iloc[0].get("user_name") or user_row.iloc[0].get("username", "")).strip()
+                                    st.session_state.pptk_filter = f"{nama_login} ({uname_login})" if uname_login else nama_login
+                                else:
+                                    st.session_state.pptk_filter = "Semua PPTK"
+                                st.rerun()
+                            else:
+                                st.error("User Name tidak ditemukan di sheet PENGGUNA.")
                         else:
-                            st.session_state.pptk_filter = "Semua PPTK"
-                        st.rerun()
+                            st.error("Sheet PENGGUNA tidak memiliki kolom user_name atau kosong.")
                     else:
-                        st.error("User Name tidak ditemukan di sheet PENGGUNA.")
-                else:
-                    st.error("Sheet PENGGUNA tidak memiliki kolom user_name atau kosong.")
-            else:
-                st.error("User Name atau password salah.")
+                        st.error("User Name atau password salah.")
     st.stop()
 
 current_user = st.session_state.current_user
