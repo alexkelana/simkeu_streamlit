@@ -61,7 +61,7 @@ if is_pptk:
     sisa_pagu_val = helpers.get_sisa_pagu(sg_kode, df_kegiatan, df_transaksi)
     st.caption(f"Pagu Awal: {helpers.format_rupiah(pagu_awal_val)} · Sisa Pagu: {helpers.format_rupiah(sisa_pagu_val)}")
 
-    with st.form("form_transaksi", border=True):
+    with st.container(border=True):
         tgl = st.date_input("Tanggal Pengajuan", value=date.today(), key="tx_tanggal")
 
         rekening = st.selectbox(
@@ -73,11 +73,14 @@ if is_pptk:
 
         pengelompokan = st.text_input("Pengelompokan Belanja (#)", key="tx_pengelompokan")
         jenis = st.selectbox("Jenis Transaksi", ["UP/GU", "LS"], key="tx_jenis")
-        nominal = st.number_input("Nominal (Rp)", min_value=0, step=1000, key="tx_nominal")
+        nominal = st.number_input(
+            "Nominal (Rp)", min_value=0.0, step=1000.0, format="%.2f", key="tx_nominal"
+        )
+        st.caption(f"Nilai terbaca: {helpers.format_rupiah(nominal)}")
         uraian = st.text_area("Uraian", height=100, key="tx_uraian")
         bukti = st.text_input("Bukti Dukung SPJ (tautan / nomor)", key="tx_bukti")
 
-        if st.form_submit_button("Ajukan Transaksi", type="primary"):
+        if st.button("Ajukan Transaksi", type="primary", key="btn_ajukan_transaksi"):
             if (
                 nominal <= 0
                 or subkegiatan == "-"
@@ -367,7 +370,7 @@ if not df_transaksi.empty:
                     e_sisa_pagu = helpers.get_sisa_pagu(e_sg_kode, df_kegiatan, df_transaksi)
                     st.caption(f"Pagu Awal: {helpers.format_rupiah(e_pagu_awal)} · Sisa Pagu: {helpers.format_rupiah(e_sisa_pagu)}")
 
-                    with st.form(f"form_edit_miliku_{no_pilih}", border=True):
+                    with st.container(border=True):
                         e_rekening = st.selectbox(
                             "Kode Rekening Belanja",
                             options=rekening_opts if rekening_opts else ["-"],
@@ -395,9 +398,11 @@ if not df_transaksi.empty:
                             "Nominal baru (Rp)",
                             min_value=0.0,
                             step=1000.0,
+                            format="%.2f",
                             value=float(helpers.parse_number(baris.get("NOMINAL", 0)) or 0),
                             key=f"e_nominal_{no_pilih}",
                         )
+                        st.caption(f"Nilai terbaca: {helpers.format_rupiah(e_nominal)}")
                         e_bukti = st.text_input(
                             "Bukti Dukung SPJ (tautan / nomor)",
                             value=str(baris.get("BUKTI DUKUNG SPJ", "")),
@@ -407,7 +412,7 @@ if not df_transaksi.empty:
                             "Saya yakin ingin mengedit transaksi ini.",
                             key=f"konf_edit_{no_pilih}",
                         )
-                        if st.form_submit_button("Simpan Edit", type="primary"):
+                        if st.button("Simpan Edit", type="primary", key=f"btn_simpan_edit_{no_pilih}"):
                             if not konf_edit:
                                 st.error("Centang konfirmasi terlebih dahulu.")
                             elif e_subkegiatan == "-" or e_rekening == "-" or not e_uraian.strip() or e_nominal <= 0:
@@ -500,7 +505,7 @@ if not df_transaksi.empty:
                     else:
                         alasan_lama = str(baris.get("ALASAN_PENOLAKAN", "") or "")
                         st.error(f"Alasan penolakan: {alasan_lama if alasan_lama else '-'}")
-                        with st.form(f"form_ajukan_ulang_{no_pilih}", border=True):
+                        with st.container(border=True):
                             st.markdown("**Ajukan ulang transaksi (NO baru)**")
                             a_uraian = st.text_area(
                                 "Uraian baru",
@@ -511,14 +516,16 @@ if not df_transaksi.empty:
                                 "Nominal baru (Rp)",
                                 min_value=0.0,
                                 step=1000.0,
+                                format="%.2f",
                                 value=float(helpers.parse_number(baris.get("NOMINAL", 0)) or 0),
                                 key=f"a_nominal_{no_pilih}",
                             )
+                            st.caption(f"Nilai terbaca: {helpers.format_rupiah(a_nominal)}")
                             konf_ulang = st.checkbox(
                                 "Saya yakin ingin mengajukan ulang transaksi ini.",
                                 key=f"konf_ulang_{no_pilih}",
                             )
-                            if st.form_submit_button("Ajukan Ulang", type="primary"):
+                            if st.button("Ajukan Ulang", type="primary", key=f"btn_ajukan_ulang_{no_pilih}"):
                                 if not konf_ulang:
                                     st.error("Centang konfirmasi terlebih dahulu.")
                                 elif not a_uraian.strip() or a_nominal <= 0:

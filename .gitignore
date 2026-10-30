@@ -1,6 +1,9 @@
 # Streamlit secrets (JANGAN commit ke Git)
 .streamlit/secrets.toml
 
+# Lock file operasi tulis (dibuat saat runtime)
+.streamlit/simkeu_write.lock
+
 # Python
 __pycache__/
 *.py[cod]

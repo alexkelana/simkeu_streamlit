@@ -24,10 +24,10 @@ class TestAppRuns:
         sys.path.insert(0, str(ROOT))
         from app_pages.helpers import format_rupiah, is_manager
 
-        assert format_rupiah(1000000) == "Rp 1.000.000"
-        assert format_rupiah(0) == "Rp 0"
-        assert format_rupiah(-500000) == "(Rp 500.000)"
-        assert format_rupiah("500,000.00") == "Rp 500.000"
+        assert format_rupiah(1000000) == "Rp 1.000.000,00"
+        assert format_rupiah(0) == "Rp 0,00"
+        assert format_rupiah(-500000) == "(Rp 500.000,00)"
+        assert format_rupiah("500,000.00") == "Rp 500.000,00"
         assert format_rupiah("abc") == "-"
         assert format_rupiah(None) == "-"
 
@@ -265,25 +265,27 @@ class TestAppRuns:
             },
         ])
 
-        transaksi_calls = []
         arsip_calls = []
+        deleted_rows = []
 
         def fake_load(ws):
             if ws == "TRANSAKSI":
                 return df.copy()
-            if ws == "TRANSAKSI DIHAPUS":
-                return pd.DataFrame()
             return pd.DataFrame()
 
-        def fake_update(ws, data):
-            if ws == "TRANSAKSI DIHAPUS":
-                arsip_calls.append(data.copy())
-            elif ws == "TRANSAKSI":
-                transaksi_calls.append(data.copy())
+        def fake_append(name, row_dict, columns=None):
+            if name == "TRANSAKSI DIHAPUS":
+                arsip_calls.append(dict(row_dict))
+            return True
+
+        def fake_delete(name, sheet_row):
+            deleted_rows.append((name, sheet_row))
             return True
 
         monkeypatch.setattr(helpers, "load_sheet", fake_load)
-        monkeypatch.setattr(helpers, "update_sheet_data", fake_update)
+        monkeypatch.setattr(helpers, "_append_rows_celllevel", fake_append)
+        monkeypatch.setattr(helpers, "_delete_row_celllevel", fake_delete)
+        monkeypatch.setattr(helpers, "write_audit_log", lambda *a, **k: True)
 
         # boleh_hapus_transaksi: Draft dan Ditolak boleh, Disetujui tidak.
         assert helpers.boleh_hapus_transaksi(
@@ -296,21 +298,19 @@ class TestAppRuns:
             pd.Series({"PPTK": "Budi (budi)", "STATUS": "Disetujui"}), "Budi (budi)"
         ) is False
 
-        # Hapus Draft (NO=1): pindah ke arsip dan hilang dari TRANSAKSI.
+        # Hapus Draft (NO=1): pindah ke arsip dan barisnya dihapus dari TRANSAKSI.
         ok = helpers.delete_transaksi_pptk(1, "Budi", "Budi (budi)")
         assert ok is True
-        assert any(len(c) == 1 for c in arsip_calls), "baris harus dipindah ke TRANSAKSI DIHAPUS"
-        arsip_df = arsip_calls[-1]
-        assert "TANGGAL_HAPUS" in arsip_df.columns, "kolom TANGGAL_HAPUS harus ada di TRANSAKSI DIHAPUS"
-        assert arsip_df["TANGGAL_HAPUS"].iloc[0].count(":") == 2, "TANGGAL_HAPUS harus format hh:mm:ss"
-        saved = transaksi_calls[-1]
-        assert "1" not in saved["NO"].astype(str).tolist(), "NO 1 harus hilang dari TRANSAKSI"
+        assert len(arsip_calls) == 1, "baris harus dipindah ke TRANSAKSI DIHAPUS"
+        arsip = arsip_calls[-1]
+        assert "TANGGAL_HAPUS" in arsip, "kolom TANGGAL_HAPUS harus ada di TRANSAKSI DIHAPUS"
+        assert arsip["TANGGAL_HAPUS"].count(":") == 2, "TANGGAL_HAPUS harus format hh:mm:ss"
+        assert ("TRANSAKSI", 2) in deleted_rows, "baris NO 1 (sheet row 2) harus dihapus"
 
         # Hapus Ditolak (NO=2): juga boleh.
         ok = helpers.delete_transaksi_pptk(2, "Budi", "Budi (budi)")
         assert ok is True
-        saved = transaksi_calls[-1]
-        assert "2" not in saved["NO"].astype(str).tolist(), "NO 2 harus hilang dari TRANSAKSI"
+        assert ("TRANSAKSI", 3) in deleted_rows, "baris NO 2 (sheet row 3) harus dihapus"
 
         # Tidak boleh hapus Disetujui (NO=3).
         ok = helpers.delete_transaksi_pptk(3, "Budi", "Budi (budi)")
@@ -328,20 +328,27 @@ class TestAppRuns:
             "DISETUJUI_OLEH", "TANGGAL_APPROVAL", "ALASAN_PENOLAKAN",
         ])
 
-        calls = []
+        appended_rows = []
 
         def fake_load(ws):
             if ws == "TRANSAKSI":
-                return df.copy()
+                # Sheet nyata selalu punya header; seed satu baris agar urutan
+                # kolom mengikuti header sheet (bukan urutan dict new_data).
+                seeded = df.copy()
+                seeded.loc[0, "NO"] = 0
+                return seeded
             return pd.DataFrame()
 
-        def fake_update(ws, data):
-            if ws == "TRANSAKSI":
-                calls.append(data.copy())
-            return True
+        class FakeWorksheet:
+            def append_rows(self, rows, value_input_option=None):
+                appended_rows.extend(rows)
+
+        def fake_get_ws(name):
+            return FakeWorksheet()
 
         monkeypatch.setattr(helpers, "load_sheet", fake_load)
-        monkeypatch.setattr(helpers, "update_sheet_data", fake_update)
+        monkeypatch.setattr(helpers, "_get_gspread_worksheet", fake_get_ws)
+        monkeypatch.setattr(helpers, "write_audit_log", lambda *a, **k: True)
 
         new_data = {
             "SUB KEGIATAN": "SK001 - Kegiatan A",
@@ -356,8 +363,9 @@ class TestAppRuns:
         }
         ok, no = helpers.append_transaksi(new_data, user="Budi")
         assert ok is True
-        saved = calls[-1]
-        row = saved[saved["NO"].astype(str) == str(no)].iloc[0]
+        assert appended_rows, "append_transaksi harus menambah satu baris (cell-level)"
+        row = dict(zip(df.columns, appended_rows[-1]))
+        assert str(row["NO"]) == str(no)
         tgl = str(row["TANGGAL PENGAJUAN"])
         assert tgl.count(":") == 2, f"TANGGAL PENGAJUAN harus format hh:mm:ss, dapat: {tgl}"
 

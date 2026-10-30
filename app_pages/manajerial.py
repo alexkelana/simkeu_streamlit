@@ -181,17 +181,18 @@ if not df_kegiatan.empty and "Kode Sub Kegiatan" in df_kegiatan.columns:
         f"Sisa Pagu: {helpers.format_rupiah(sisa_lama)}"
     )
 
-    with st.form("form_perubahan_pagu_manajerial", border=True):
+    with st.container(border=True):
         perubahan = st.number_input(
             "Perubahan Pagu (Rp)",
             step=100000.0,
-            format="%f",
+            format="%.2f",
             key="mp_perubahan",
             help="Isi angka positif untuk penambahan, negatif untuk pengurangan.",
         )
+        st.caption(f"Nilai terbaca: {helpers.format_rupiah(perubahan)}")
 
         konf_mp = st.checkbox("Saya yakin ingin mencatat perubahan pagu ini.", key="mp_conf")
-        if st.form_submit_button("Catat Perubahan Pagu", type="primary"):
+        if st.button("Catat Perubahan Pagu", type="primary", key="btn_catat_mp"):
             if not konf_mp:
                 st.error("Centang konfirmasi terlebih dahulu.")
             elif not selected_subkode or selected_subkode == "-":

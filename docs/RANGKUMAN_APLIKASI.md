@@ -97,7 +97,9 @@ flowchart LR
 |---|---|
 | `load_sheet(nama)` | Membaca worksheet, di-cache `@st.cache_data(ttl=300)`, mengembalikan `DataFrame` kosong bila gagal |
 | `update_sheet_data(nama, df)` | Menulis ulang **seluruh** worksheet lalu `load_sheet.clear()` |
-| `write_audit_log(...)` | Menambah baris ke `AUDIT_LOG` |
+| `_append_rows_celllevel(nama, row_dict, columns=None)` | Append **satu baris** langsung ke worksheet (cell-level) sehingga formatting manual tetap utuh; dipakai `AUDIT_LOG`, transaksi baru, arsip hapus, dan tambah master |
+| `_delete_row_celllevel(nama, sheet_row)` | Hapus **satu baris** langsung (cell-level) berdasarkan nomor baris 1-based; dipakai hapus transaksi |
+| `write_audit_log(...)` | Menambah baris ke `AUDIT_LOG` via append cell-level |
 | `append_transaksi`, `edit_transaksi`, `delete_transaksi`, `update_transaksi_status` | Operasi transaksi + audit |
 | `add/edit/delete_master_*` | Operasi master data + audit |
 | `parse_number`, `to_number_series`, `format_rupiah`, `format_df_rupiah` | Normalisasi angka dan format Rupiah |
@@ -112,7 +114,9 @@ flowchart LR
 Catatan teknis:
 
 - Cache data 300 detik pada `load_sheet`; koneksi `conn.read(..., ttl=30)`.
-- Setiap penyimpanan menulis ulang seluruh worksheet (bukan append baris).
+- Operasi yang hanya menambah/menghapus **satu baris** (transaksi baru, hapus transaksi, arsip `TRANSAKSI DIHAPUS`, `AUDIT_LOG`, tambah master wilayah/rekening/pengguna) memakai append/delete cell-level, bukan tulis ulang sheet.
+- Operasi yang mengubah **banyak kolom** sekaligus (edit transaksi, approval, edit/hapus master, perubahan pagu, reset formula `Sisa Pagu`) masih menulis ulang seluruh worksheet.
+- `format_rupiah()` memakai 2 desimal: `Rp 1.000.000,00`, negatif `(Rp 500.000,00)`, nilai tidak valid `-`.
 - `SPREADSHEET_URL` ditulis langsung di `db.py`.
 
 ### 2.3 Diagram komponen dan deployment
@@ -282,7 +286,7 @@ sequenceDiagram
 | `Kode Rekening Belanja` | `selectbox` | Ya | Opsi dari `MASTER_REKENING`, label `kode — uraian` |
 | `Pengelompokan Belanja (#)` | `text_input` | Tidak | Teks bebas |
 | `Jenis Transaksi` | `selectbox` | Ya | `UP/GU` atau `LS` |
-| `Nominal (Rp)` | `number_input` | Ya | `min_value=0`, `step=1000`; harus > 0 |
+| `Nominal (Rp)` | `number_input` | Ya | `min_value=0.0`, `step=1000.0`, `format="%.2f"`; harus > 0. Di bawahnya caption `Nilai terbaca: Rp …` (validasi format). Input di luar `st.form` agar caption ter-update live |
 | `Uraian` | `text_area` | Tidak | Teks bebas |
 | `Bukti Dukung SPJ` | `text_input` | Tidak | Tautan atau nomor bukti |
 
@@ -835,7 +839,7 @@ Nilai lama dan baru disimpan sebagai string dictionary.
 | Sidebar Dashboard | Tombol unduh Excel; tombol unduh PDF untuk manajer; toggle Notifikasi Telegram (hanya manajer, tersimpan persisten) |
 | Sidebar Transaksi | Tombol unduh Excel (data terfilter); tombol unduh PDF untuk manajer (hanya saat menu Transaksi aktif) |
 
-Format angka: `Rp 1.000.000`, nilai negatif `(Rp 500.000)`, nilai tidak valid `-`.
+Format angka: `Rp 1.000.000,00` (dua desimal), nilai negatif `(Rp 500.000,00)`, nilai tidak valid `-`.
 
 ### 8.2 Output dokumen (unduhan)
 
@@ -976,7 +980,8 @@ Diurutkan dari yang paling berdampak pada akurasi/operasional.
 
 ### 10.7 Keterbatasan arsitektur Google Sheets
 
-- Setiap simpan menulis ulang seluruh worksheet → makin besar data, makin lambat dan berisiko konflik.
+- Operasi yang mengubah banyak kolom (edit transaksi, approval, edit/hapus master, perubahan pagu) masih menulis ulang seluruh worksheet → makin besar data, makin lambat dan berisiko konflik.
+- Operasi tambah/hapus satu baris (transaksi baru, hapus transaksi, `AUDIT_LOG`, tambah master wilayah/rekening/pengguna) sudah memakai append/delete cell-level sehingga lebih ringan dan tidak menghapus formatting manual.
 - Tidak ada locking/transaksi; dua pengguna yang menyimpan bersamaan dapat saling menimpa.
 - `AUDIT_LOG` ditulis dengan pola baca-ubah-tulis yang sama (race condition).
 - Cache `ttl=300` membuat data bisa tertinggal hingga 5 menit; `update_sheet_data` membersihkan seluruh cache `load_sheet`, bukan hanya sheet terkait (komentar kode menyebut "hanya worksheet tersebut", perilaku aktual global untuk `load_sheet`).
@@ -1007,6 +1012,18 @@ Diurutkan dari yang paling berdampak pada akurasi/operasional.
 
 - Sebelumnya: nilai widget form (input tanggal, uraian, nominal, checkbox konfirmasi, dll.) tetap terlihat setelah `st.rerun()` karena Streamlit mempertahankan widget key di `st.session_state`.
 - **Diperbaiki:** Helper `reset_form_keys(*keys)` menghapus key widget dari `st.session_state` sebelum `st.rerun()` di setiap aksi sukses (simpan, edit Draft, hapus Draft, ajukan ulang, setujui/tolak, proses pagu, tambah/edit/hapus master, tambah pengguna). Form kembali ke nilai default.
+
+### 10.12 Input nominal, format rupiah, dan caption validasi
+
+- **Diperbaiki:** semua nilai uang kini diformat 2 desimal (`Rp 1.000.000,00`) pada KPI, tabel, PDF, dan SPJ; negatif `(Rp 500.000,00)`.
+- **Diperbaiki:** input nominal kembali memakai `st.number_input` (bukan `st.text_input`) agar user tidak mungkin mengetik non-angka, dengan `format="%.2f"` dan seluruh argumen (`min_value`, `step`, `value`) bertipe float untuk menghindari warning "value below has type int".
+- **Keterbatasan Streamlit:** `st.number_input` tidak menampilkan pemisah ribuan saat mengetik. Sebagai validasi format, di bawah setiap input nominal ditampilkan caption `Nilai terbaca: Rp …`.
+- **Keputusan UI:** input nominal ditempatkan di luar `st.form` (dibungkus `st.container(border=True)` dengan tombol biasa) agar caption ikut berubah setiap kali angka diubah. Konsekuensi: halaman rerun pada setiap perubahan widget dan submit hanya lewat tombol (bukan Enter). Form yang tidak memuat nominal (Wilayah, Rekening, Pengguna, Login) tetap memakai `st.form`.
+
+### 10.13 Penulisan sel-level untuk menjaga formatting spreadsheet
+
+- **Diperbaiki:** append/hapus satu baris tidak lagi menulis ulang seluruh worksheet. `append_transaksi`, `delete_transaksi`, `delete_transaksi_pptk` (arsip + hapus baris), `write_audit_log`, serta `add_master_wilayah` / `add_master_rekening` / `add_master_user` memakai `ws.append_rows` / `ws.delete_rows` sehingga warna header, border, lebar kolom, dan alignment manual di spreadsheet tetap utuh.
+- Edit, approval, perubahan pagu, dan master sub kegiatan (karena menulis ulang formula `Sisa Pagu`) masih memakai tulis-ulang worksheet.
 
 ---
 

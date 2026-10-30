@@ -53,8 +53,20 @@ def edit_delete_block(
     id_column: str,
     key_for_idx: str,
     user: str,
+    in_form: bool = True,
 ) -> None:
-    """Blok Edit / Hapus generik dengan preview dan konfirmasi (10.4 Temuan)."""
+    """Blok Edit / Hapus generik dengan preview dan konfirmasi (10.4 Temuan).
+
+    ``in_form=False`` dipakai bila blok ini dirender di dalam container biasa
+    (bukan ``st.form``), sehingga tombol memakai ``st.button`` dan perubahan
+    widget langsung memicu rerun (mis. caption nominal ter-update live).
+    """
+
+    def _submit(label: str, kind: str, key: str) -> bool:
+        if in_form:
+            return st.form_submit_button(label, type=kind, key=key)
+        return st.button(label, type=kind, key=key)
+
     st.divider()
     st.markdown(f"**Edit / Hapus {key_prefix.title()}**")
     idx = st.number_input(
@@ -77,7 +89,13 @@ def edit_delete_block(
                 label, value=default, key=f"{key_prefix}_{field}", **kwargs
             )
         elif widget == "number":
-            values[field] = st.number_input(label, value=float(default) if default else 0.0, key=f"{key_prefix}_{field}", **kwargs)
+            values[field] = st.number_input(
+                label,
+                value=float(default) if default else 0.0,
+                key=f"{key_prefix}_{field}",
+                **kwargs,
+            )
+            st.caption(f"Nilai terbaca: {helpers.format_rupiah(values[field])}")
         elif widget == "select":
             values[field] = st.selectbox(label, kwargs.get("options", []), key=f"{key_prefix}_{field}")
 
@@ -86,7 +104,7 @@ def edit_delete_block(
     )
     col_simpan, col_hapus = st.columns(2)
     with col_simpan:
-        if st.form_submit_button("Simpan Perubahan", type="primary", key=f"{key_prefix}_save"):
+        if _submit("Simpan Perubahan", "primary", f"{key_prefix}_save"):
             if not konfirmasi:
                 st.error("Centang konfirmasi terlebih dahulu.")
             elif not df.empty and 0 <= int(idx) < len(df):
@@ -104,7 +122,7 @@ def edit_delete_block(
             else:
                 st.error("Indeks baris tidak valid.")
     with col_hapus:
-        if st.form_submit_button("Hapus", type="secondary", key=f"{key_prefix}_delete"):
+        if _submit("Hapus", "secondary", f"{key_prefix}_delete"):
             if not konfirmasi:
                 st.error("Centang konfirmasi terlebih dahulu.")
             elif not df.empty and 0 <= int(idx) < len(df):
@@ -171,16 +189,21 @@ if tab2.open:
                 hide_index=True,
                 width="stretch",
             )
-            with st.form("form_kegiatan", border=True):
+            with st.container(border=True):
                 col_add, col_ed = st.columns([1, 1])
                 with col_add:
                     st.markdown("**Tambah Sub Kegiatan**")
                     k_sub = st.text_input("Kode Sub Kegiatan", key="k_sub")
                     k_nama = st.text_input("Nama Kegiatan", key="k_nama")
                     k_pagu = st.number_input(
-                        "Pagu Awal (Rp)", min_value=0, step=1000000, key="k_pagu"
+                        "Pagu Awal (Rp)",
+                        min_value=0.0,
+                        step=1000000.0,
+                        format="%.2f",
+                        key="k_pagu",
                     )
-                    if st.form_submit_button("Simpan Kegiatan", type="primary"):
+                    st.caption(f"Nilai terbaca: {helpers.format_rupiah(k_pagu)}")
+                    if st.button("Simpan Kegiatan", type="primary", key="btn_simpan_kegiatan"):
                         if helpers.add_master_kegiatan(
                             k_sub, k_nama, k_pagu, user=user_nama
                         ):
@@ -198,11 +221,12 @@ if tab2.open:
                         fields={
                             "Kode Sub Kegiatan": ("Kode Sub Kegiatan Baru", "text", {}),
                             "Sub Kegiatan": ("Nama Kegiatan Baru", "text", {}),
-                            "Pagu Awal": ("Pagu Awal Baru (Rp)", "number", {"min_value": 0, "step": 1000000}),
+                            "Pagu Awal": ("Pagu Awal Baru (Rp)", "number", {"min_value": 0.0, "step": 1000000.0, "format": "%.2f"}),
                         },
                         id_column="Kode Sub Kegiatan",
                         key_for_idx="k_idx",
                         user=user_nama,
+                        in_form=False,
                     )
         else:
             st.info("Belum ada data sub kegiatan.")

@@ -137,6 +137,59 @@ def _get_gspread_worksheet(worksheet_name: str):
     return spreadsheet.worksheet(worksheet_name)
 
 
+def _append_rows_celllevel(worksheet_name: str, row_dict: dict,
+                           columns: list | None = None) -> bool:
+    """Append satu baris ke worksheet (cell-level) tanpa menimpa seluruh sheet.
+
+    Digunakan agar formatting manual di spreadsheet (warna header, border,
+    lebar kolom, alignment) tidak terhapus. ``row_dict`` diurutkan sesuai
+    header sheet (atau ``columns`` jika disediakan) agar nilai masuk ke kolom
+    yang benar. Mengembalikan True jika berhasil.
+    """
+    if not GSPREAD_AVAILABLE:
+        return False
+    _acquire_write_lock()
+    try:
+        ws = _get_gspread_worksheet(worksheet_name)
+        if columns is None:
+            columns = ws.row_values(1)
+        ordered = [row_dict.get(c, "") for c in columns]
+        ws.append_rows([ordered], value_input_option="USER_ENTERED")
+        try:
+            load_sheet.clear()  # Buang cache agar baca berikutnya segar
+        except AttributeError:
+            pass
+        return True
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Gagal append_rows ke '%s': %s", worksheet_name, exc)
+        return False
+    finally:
+        _release_write_lock()
+
+
+def _delete_row_celllevel(worksheet_name: str, sheet_row: int) -> bool:
+    """Hapus satu baris di spreadsheet berdasarkan nomor baris 1-based (termasuk header).
+
+    Cell-level: hanya baris target yang dihapus, formatting baris lain tetap utuh.
+    """
+    if not GSPREAD_AVAILABLE:
+        return False
+    _acquire_write_lock()
+    try:
+        ws = _get_gspread_worksheet(worksheet_name)
+        ws.delete_rows(sheet_row)
+        try:
+            load_sheet.clear()
+        except AttributeError:
+            pass
+        return True
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Gagal delete_rows baris %d di '%s': %s", sheet_row, worksheet_name, exc)
+        return False
+    finally:
+        _release_write_lock()
+
+
 # ---------------------------------------------------------------------------
 # Pengaturan Telegram persistente (simpan di file JSON agar tidak hilang
 # saat server restart; st.session_state hanya berlaku per-sesi).
@@ -326,9 +379,13 @@ def format_rupiah(n):
     number = parse_number(n)
     if number is None:
         return "-"
+    # Format Indonesia: titik sebagai pemisah ribuan, koma sebagai desimal,
+    # selalu 2 digit di belakang koma (contoh Rp 1.000.000,00 / (Rp 500.000,00)).
+    teks = f"{abs(number):,.2f}"          # 1,000,000.00
+    teks = teks.replace(",", "X").replace(".", ",").replace("X", ".")  # 1.000.000,00
     if number < 0:
-        return f"(Rp {abs(number):,.0f})".replace(",", ".")
-    return f"Rp {number:,.0f}".replace(",", ".")
+        return f"(Rp {teks})"
+    return f"Rp {teks}"
 
 
 def format_df_rupiah(df: pd.DataFrame) -> pd.DataFrame:
@@ -583,11 +640,6 @@ def get_rekening_full(kode: str, df: pd.DataFrame) -> str:
 def write_audit_log(action: str, table: str, record_id: str,
                     old_values: dict = None, new_values: dict = None, user: str = "Sistem") -> bool:
     try:
-        df = load_sheet("AUDIT_LOG")
-        if df.empty:
-            df = pd.DataFrame(columns=[
-                "WAKTU", "USER", "AKSI", "TABEL", "RECORD_ID", "OLD VALUES", "NEW VALUES"
-            ])
         new_row = {
             "WAKTU": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
             "USER": user,
@@ -597,9 +649,9 @@ def write_audit_log(action: str, table: str, record_id: str,
             "OLD VALUES": str(old_values) if old_values else "",
             "NEW VALUES": str(new_values) if new_values else "",
         }
-        updated = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-        return update_sheet_data("AUDIT_LOG", updated)
-    except Exception:
+        # Cell-level append: preserve formatting manual di sheet AUDIT_LOG.
+        return _append_rows_celllevel("AUDIT_LOG", new_row)
+    except Exception:  # noqa: BLE001
         return False
 
 
@@ -639,6 +691,8 @@ def reset_form_keys(*keys: str) -> None:
 # ---------------------------------------------------------------------------
 def append_transaksi(new_data: dict, user: str = "Sistem"):
     _acquire_write_lock()
+    ok = False
+    next_no = None
     try:
         df = load_sheet("TRANSAKSI")
         if df.empty:
@@ -673,13 +727,15 @@ def append_transaksi(new_data: dict, user: str = "Sistem"):
         except Exception:
             st.error("❌ Gagal menyimpan transaksi.")
             ok = False
-
-        if ok:
-            write_audit_log("CREATE", "TRANSAKSI", str(next_no), None, new_data, user)
-            return True, next_no
-        return False, "Gagal menyimpan transaksi."
     finally:
         _release_write_lock()
+
+    # Audit log di luar lock (write_audit_log mengunci sendiri) untuk
+    # menghindari nested lock / deadlock pada append_rows.
+    if ok:
+        write_audit_log("CREATE", "TRANSAKSI", str(next_no), None, new_data, user)
+        return True, next_no
+    return False, "Gagal menyimpan transaksi."
 
 
 def update_transaksi_status(no: int, status: str, approved_by: str,
@@ -718,8 +774,10 @@ def delete_transaksi(no: int, user: str = "Sistem") -> bool:
     if not mask.any():
         return False
     old = df.loc[mask].iloc[0].to_dict()
-    df = df[~mask].reset_index(drop=True)
-    ok = update_sheet_data("TRANSAKSI", df)
+    # Nomor baris di spreadsheet = indeks df + 2 (baris 1 = header).
+    sheet_row = int(df.index[mask][0]) + 2
+    # Cell-level delete_rows: hanya baris target terhapus, formatting lain utuh.
+    ok = _delete_row_celllevel("TRANSAKSI", sheet_row)
     if ok:
         write_audit_log("DELETE", "TRANSAKSI", str(no), old, None, user)
     return ok
@@ -824,23 +882,26 @@ def delete_transaksi_pptk(no: int, user: str, pptk_label: str) -> bool:
     if not boleh_hapus_transaksi(row, pptk_label):
         return False
     old = row.to_dict()
+    # Nomor baris di spreadsheet = indeks df + 2 (baris 1 = header).
+    sheet_row = int(df.index[mask][0]) + 2
 
-    # Pindahkan baris ke sheet TRANSAKSI DIHAPUS sebelum dihapus.
+    # Pindahkan baris ke sheet TRANSAKSI DIHAPUS (cell-level append).
     df_arsip = load_sheet("TRANSAKSI DIHAPUS")
     if df_arsip.empty:
         df_arsip = pd.DataFrame(columns=list(df.columns) + ["TANGGAL_HAPUS"])
     row_hapus = row.copy()
     row_hapus["TANGGAL_HAPUS"] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-    df_arsip = pd.concat([df_arsip, pd.DataFrame([row_hapus])], ignore_index=True)
-    if not update_sheet_data("TRANSAKSI DIHAPUS", df_arsip):
+    arsip_cols = list(df_arsip.columns)
+    arsip_dict = {c: row_hapus.get(c, "") for c in arsip_cols}
+    if not _append_rows_celllevel("TRANSAKSI DIHAPUS", arsip_dict, columns=arsip_cols):
         return False
 
-    # Hapus dari TRANSAKSI dan tulis ulang tanpa baris kosong.
-    df = df[~mask].reset_index(drop=True)
-    ok = update_sheet_data("TRANSAKSI", df)
-    if ok:
-        write_audit_log("DELETE", "TRANSAKSI", str(no), old, None, user)
-    return ok
+    # Hapus dari TRANSAKSI (cell-level delete_rows).
+    if not _delete_row_celllevel("TRANSAKSI", sheet_row):
+        return False
+
+    write_audit_log("DELETE", "TRANSAKSI", str(no), old, None, user)
+    return True
 
 
 def ajukan_ulang_transaksi(no_lama: int, uraian: str, nominal: float,
@@ -1125,12 +1186,9 @@ def update_master_subkegiatan_perubahan_pagu(
 
 
 def add_master_rekening(kode: str, uraian: str, user: str = "Sistem") -> bool:
-    df = load_sheet("MASTER_REKENING")
-    if df.empty:
-        df = pd.DataFrame(columns=["Kode Rekening", "Uraian Rekening"])
-    new_row = pd.DataFrame([{"Kode Rekening": kode, "Uraian Rekening": uraian}])
-    updated = pd.concat([df, new_row], ignore_index=True)
-    ok = update_sheet_data("MASTER_REKENING", updated)
+    new_row = {"Kode Rekening": kode, "Uraian Rekening": uraian}
+    # Cell-level append: preserve formatting manual di sheet MASTER_REKENING.
+    ok = _append_rows_celllevel("MASTER_REKENING", new_row)
     if ok:
         write_audit_log("CREATE", "MASTER_REKENING", kode, None,
                         {"Kode Rekening": kode, "Uraian Rekening": uraian}, user)
@@ -1164,12 +1222,9 @@ def delete_master_rekening(idx: int, user: str = "Sistem") -> bool:
 
 
 def add_master_wilayah(nama: str, kode: str, user: str = "Sistem") -> bool:
-    df = load_sheet("MASTER_WILAYAH")
-    if df.empty:
-        df = pd.DataFrame(columns=["Nama Wilayah", "Kode Wilayah"])
-    new_row = pd.DataFrame([{"Nama Wilayah": nama, "Kode Wilayah": kode}])
-    updated = pd.concat([df, new_row], ignore_index=True)
-    ok = update_sheet_data("MASTER_WILAYAH", updated)
+    new_row = {"Nama Wilayah": nama, "Kode Wilayah": kode}
+    # Cell-level append: preserve formatting manual di sheet MASTER_WILAYAH.
+    ok = _append_rows_celllevel("MASTER_WILAYAH", new_row)
     if ok:
         write_audit_log("CREATE", "MASTER_WILAYAH", kode, None,
                         {"Nama Wilayah": nama, "Kode Wilayah": kode}, user)
@@ -1263,14 +1318,14 @@ def add_master_user(user_name: str, password: str, nama: str, peran: str,
     # Simpan sebagai hash, kecuali sudah berbentuk hash (10.5 Temuan).
     if password and not is_hashed(password):
         password = hash_password(password)
-    new_row = pd.DataFrame([{
+    new_row = {
         "User Name": user_name,
         "Password": password,
         "Nama": nama,
         "Peran": peran,
-    }])
-    updated = pd.concat([df, new_row], ignore_index=True)
-    ok = update_sheet_data("PENGGUNA", updated)
+    }
+    # Cell-level append: preserve formatting manual di sheet PENGGUNA.
+    ok = _append_rows_celllevel("PENGGUNA", new_row)
     if ok:
         write_audit_log("CREATE", "PENGGUNA", user_name, None,
                         {"User Name": user_name, "Nama": nama, "Peran": peran}, user)
