@@ -858,13 +858,16 @@ def edit_transaksi_pptk(no: int, sub_kegiatan: str, kode_rekening: str,
         df.loc[mask, "DIPUTUSKAN_OLEH"] = ""
     if "ALASAN_PENOLAKAN" in df.columns:
         df.loc[mask, "ALASAN_PENOLAKAN"] = ""
+    # Setelah edit, transaksi perlu approval ulang → kembali ke antrian Draft.
+    if "STATUS" in df.columns:
+        df.loc[mask, "STATUS"] = "Draft"
     ok = update_sheet_data("TRANSAKSI", df)
     if ok:
         write_audit_log("UPDATE", "TRANSAKSI", str(no), old,
                         {"SUB KEGIATAN": sub_kegiatan, "KODE REKENING BELANJA": kode_rekening,
                          "PENGELOMPOKAN BELANJA (#)": pengelompokan, "URAIAN": uraian,
                          "JENIS TRANSAKSI (UP/GU/LS)": jenis, "NOMINAL": nominal,
-                         "BUKTI DUKUNG SPJ": bukti}, user)
+                         "BUKTI DUKUNG SPJ": bukti, "STATUS": "Draft"}, user)
     return ok
 
 
