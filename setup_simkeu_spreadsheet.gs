@@ -65,7 +65,7 @@ function setupSIMKEUSpreadsheet() {
         "PENGELOMPOKAN BELANJA (#)", "URAIAN",
         "JENIS TRANSAKSI (UP/GU/LS)", "NOMINAL",
         "TANGGAL PENGAJUAN", "BUKTI DUKUNG SPJ", "PPTK",
-        "STATUS", "DISETUJUI_OLEH", "TANGGAL_APPROVAL"
+        "STATUS", "DIPUTUSKAN_OLEH", "TANGGAL_APPROVAL"
       ],
       sampleData: []
     },

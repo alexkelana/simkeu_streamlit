@@ -144,7 +144,7 @@ class TestAppRuns:
 
         df = pd.DataFrame([
             {
-                "NO": 1, "STATUS": "Draft", "DISETUJUI_OLEH": "",
+                "NO": 1, "STATUS": "Draft", "DIPUTUSKAN_OLEH": "",
                 "TANGGAL_APPROVAL": "", "ALASAN_PENOLAKAN": "",
                 "PPTK": "Budi (budi)", "NOMINAL": 1000, "URAIAN": "x",
             }
@@ -193,12 +193,12 @@ class TestAppRuns:
 
         df = pd.DataFrame([
             {
-                "NO": 1, "STATUS": "Draft", "DISETUJUI_OLEH": "",
+                "NO": 1, "STATUS": "Draft", "DIPUTUSKAN_OLEH": "",
                 "TANGGAL_APPROVAL": "", "ALASAN_PENOLAKAN": "",
                 "PPTK": "Budi (budi)", "NOMINAL": 1000, "URAIAN": "lama",
             },
             {
-                "NO": 2, "STATUS": "Disetujui", "DISETUJUI_OLEH": "Manajer",
+                "NO": 2, "STATUS": "Disetujui", "DIPUTUSKAN_OLEH": "Manajer",
                 "TANGGAL_APPROVAL": "01/01/2027", "ALASAN_PENOLAKAN": "",
                 "PPTK": "Budi (budi)", "NOMINAL": 2000, "URAIAN": "sudah setuju",
             },
@@ -249,17 +249,17 @@ class TestAppRuns:
 
         df = pd.DataFrame([
             {
-                "NO": 1, "STATUS": "Draft", "DISETUJUI_OLEH": "",
+                "NO": 1, "STATUS": "Draft", "DIPUTUSKAN_OLEH": "",
                 "TANGGAL_APPROVAL": "", "ALASAN_PENOLAKAN": "",
                 "PPTK": "Budi (budi)", "NOMINAL": 1000, "URAIAN": "draft lama",
             },
             {
-                "NO": 2, "STATUS": "Ditolak", "DISETUJUI_OLEH": "Manajer",
+                "NO": 2, "STATUS": "Ditolak", "DIPUTUSKAN_OLEH": "Manajer",
                 "TANGGAL_APPROVAL": "", "ALASAN_PENOLAKAN": "Terlalu besar",
                 "PPTK": "Budi (budi)", "NOMINAL": 2000, "URAIAN": "ditolak",
             },
             {
-                "NO": 3, "STATUS": "Disetujui", "DISETUJUI_OLEH": "Manajer",
+                "NO": 3, "STATUS": "Disetujui", "DIPUTUSKAN_OLEH": "Manajer",
                 "TANGGAL_APPROVAL": "01/01/2027", "ALASAN_PENOLAKAN": "",
                 "PPTK": "Budi (budi)", "NOMINAL": 3000, "URAIAN": "disetujui",
             },
@@ -325,7 +325,7 @@ class TestAppRuns:
             "PENGELOMPOKAN BELANJA (#)", "URAIAN",
             "JENIS TRANSAKSI (UP/GU/LS)", "NOMINAL",
             "TANGGAL PENGAJUAN", "BUKTI DUKUNG SPJ", "PPTK", "STATUS",
-            "DISETUJUI_OLEH", "TANGGAL_APPROVAL", "ALASAN_PENOLAKAN",
+            "DIPUTUSKAN_OLEH", "TANGGAL_APPROVAL", "ALASAN_PENOLAKAN",
         ])
 
         appended_rows = []
@@ -422,7 +422,7 @@ class TestAppRuns:
 
         df = pd.DataFrame([
             {
-                "NO": 1, "STATUS": "Ditolak", "DISETUJUI_OLEH": "Manajer",
+                "NO": 1, "STATUS": "Ditolak", "DIPUTUSKAN_OLEH": "Manajer",
                 "TANGGAL_APPROVAL": "01/01/2027", "ALASAN_PENOLAKAN": "Terlalu besar",
                 "PPTK": "Budi (budi)", "NOMINAL": 1000, "URAIAN": "lama",
                 "SUB KEGIATAN": "SK001 - Kegiatan A",
@@ -433,7 +433,7 @@ class TestAppRuns:
                 "BUKTI DUKUNG SPJ": "",
             },
             {
-                "NO": 2, "STATUS": "Draft", "DISETUJUI_OLEH": "",
+                "NO": 2, "STATUS": "Draft", "DIPUTUSKAN_OLEH": "",
                 "TANGGAL_APPROVAL": "", "ALASAN_PENOLAKAN": "",
                 "PPTK": "Lain (lain)", "NOMINAL": 500, "URAIAN": "x",
             },
@@ -470,7 +470,7 @@ class TestAppRuns:
         assert baris_baru["STATUS"] == "Draft"
         assert baris_baru["URAIAN"] == "uraian diperbaiki"
         assert baris_baru["NOMINAL"] == 1200
-        assert baris_baru["DISETUJUI_OLEH"] == ""
+        assert baris_baru["DIPUTUSKAN_OLEH"] == ""
         assert baris_baru["ALASAN_PENOLAKAN"] == ""
 
         # Tidak boleh ajukan ulang Draft.

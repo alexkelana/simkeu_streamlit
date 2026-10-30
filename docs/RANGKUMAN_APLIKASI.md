@@ -429,7 +429,7 @@ erDiagram
         string BUKTI_DUKUNG_SPJ
         string PPTK
         string STATUS
-        string DISETUJUI_OLEH
+        string DIPUTUSKAN_OLEH
         string TANGGAL_APPROVAL
     }
     PERUBAHAN_PAGU {
@@ -517,7 +517,7 @@ Formula `Sisa Pagu` ditulis ulang otomatis setiap kali sub kegiatan ditambah/diu
 | `BUKTI DUKUNG SPJ` | Text | Tidak | Form | `SPJ-001/2027` |
 | `PPTK` | Text | Ya | Aplikasi | `Agus Setiawan (pptk1)` |
 | `STATUS` | Text | Ya | Aplikasi | `Draft` |
-| `DISETUJUI_OLEH` | Text | Tidak | Aplikasi | `Budi Santoso` |
+| `DIPUTUSKAN_OLEH` | Text | Tidak | Aplikasi | `Budi Santoso` |
 | `TANGGAL_APPROVAL` | Text | Tidak | Aplikasi | `02/01/2027` |
 | `ALASAN_PENOLAKAN` | Text | Tidak | Aplikasi | `-` |
 
@@ -619,8 +619,8 @@ Kedua peran diperlakukan sama oleh `is_manager()`. Menu: Transaksi, Dashboard, M
    Aksi tersedia:
    | Aksi | Efek |
    |---|---|
-   | Setujui | `STATUS = Disetujui`, isi `DISETUJUI_OLEH`, `TANGGAL_APPROVAL`; audit `UPDATE_STATUS` |
-   | Tolak | `STATUS = Ditolak`, isi `DISETUJUI_OLEH`, `TANGGAL_APPROVAL` dan `ALASAN_PENOLAKAN` (wajib diisi); audit `UPDATE_STATUS`; notifikasi dikirim ke PPTK |
+   | Setujui | `STATUS = Disetujui`, isi `DIPUTUSKAN_OLEH`, `TANGGAL_APPROVAL`; audit `UPDATE_STATUS` |
+   | Tolak | `STATUS = Ditolak`, isi `DIPUTUSKAN_OLEH`, `TANGGAL_APPROVAL` dan `ALASAN_PENOLAKAN` (wajib diisi); audit `UPDATE_STATUS`; notifikasi dikirim ke PPTK |
    | Cetak SPJ | Unduh `SPJ_No{no}.pdf` |
    | Edit / Hapus oleh manajer | **Dihapus** — PPTK sendiri yang mengedit atau menghapus transaksi `Draft` miliknya |
 4. **Peringkat PPTK** — urutan berdasarkan total realisasi.
@@ -647,7 +647,7 @@ sequenceDiagram
 
     alt Setujui / Tolak
         J->>H: update_transaksi_status(NO, status, approver)
-        H->>G: update STATUS · DISETUJUI_OLEH · TANGGAL_APPROVAL
+        H->>G: update STATUS · DIPUTUSKAN_OLEH · TANGGAL_APPROVAL
         H->>A: UPDATE_STATUS (old + new values)
         H-->>J: ok
         J-->>M: sukses + rerun
@@ -781,7 +781,7 @@ stateDiagram-v2
     end note
 
     note right of Disetujui
-        DISETUJUI_OLEH dan TANGGAL_APPROVAL
+        DIPUTUSKAN_OLEH dan TANGGAL_APPROVAL
         diisi otomatis saat approval.
         Hanya status ini yang dihitung
         formula Sisa Pagu di spreadsheet.
@@ -790,7 +790,7 @@ stateDiagram-v2
 
 - Status awal selalu `Draft` (`append_transaksi`).
 - `Menunggu Approval` ikut difilter sebagai antrian, tetapi **tidak pernah** ditulis oleh kode transaksi.
-- Setiap perubahan status mengisi `DISETUJUI_OLEH` dan `TANGGAL_APPROVAL`.
+- Setiap perubahan status mengisi `DIPUTUSKAN_OLEH` dan `TANGGAL_APPROVAL`.
 
 ### 7.2 Status perubahan pagu
 
@@ -886,7 +886,7 @@ Catatan:
 | Aksi | Dampak |
 |---|---|
 | Simpan transaksi | Baris baru di `TRANSAKSI` + baris `AUDIT_LOG` |
-| Approval | Update `STATUS`, `DISETUJUI_OLEH`, `TANGGAL_APPROVAL` + `AUDIT_LOG` |
+| Approval | Update `STATUS`, `DIPUTUSKAN_OLEH`, `TANGGAL_APPROVAL` + `AUDIT_LOG` |
 | Edit/hapus transaksi | Update/hapus baris `TRANSAKSI` + `AUDIT_LOG` |
 | Master data | Tambah/ubah/hapus baris master + `AUDIT_LOG`; `Sisa Pagu` ditulis ulang sebagai formula |
 | Perubahan pagu | Update `Perubahan Pagu` di `MASTER_SUB_KEGIATAN` + `AUDIT_LOG` (`UPDATE`, user Kasubag) |

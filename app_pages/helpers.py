@@ -701,7 +701,7 @@ def append_transaksi(new_data: dict, user: str = "Sistem"):
                 "PENGELOMPOKAN BELANJA (#)", "URAIAN",
                 "JENIS TRANSAKSI (UP/GU/LS)", "NOMINAL",
                 "TANGGAL PENGAJUAN", "BUKTI DUKUNG SPJ", "PPTK", "STATUS",
-                "DISETUJUI_OLEH", "TANGGAL_APPROVAL", "ALASAN_PENOLAKAN",
+                "DIPUTUSKAN_OLEH", "TANGGAL_APPROVAL", "ALASAN_PENOLAKAN",
             ])
         next_no = 1
         if not df.empty and "NO" in df.columns:
@@ -751,7 +751,7 @@ def update_transaksi_status(no: int, status: str, approved_by: str,
     if "ALASAN_PENOLAKAN" not in df.columns:
         df["ALASAN_PENOLAKAN"] = ""
     df.loc[mask, "STATUS"] = status
-    df.loc[mask, "DISETUJUI_OLEH"] = approved_by
+    df.loc[mask, "DIPUTUSKAN_OLEH"] = approved_by
     df.loc[mask, "TANGGAL_APPROVAL"] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     if status == "Ditolak":
         df.loc[mask, "ALASAN_PENOLAKAN"] = alasan
@@ -760,7 +760,7 @@ def update_transaksi_status(no: int, status: str, approved_by: str,
     ok = update_sheet_data("TRANSAKSI", df)
     if ok:
         write_audit_log("UPDATE_STATUS", "TRANSAKSI", str(no), old,
-                        {"STATUS": status, "DISETUJUI_OLEH": approved_by,
+                        {"STATUS": status, "DIPUTUSKAN_OLEH": approved_by,
                          "ALASAN_PENOLAKAN": alasan if status == "Ditolak" else ""},
                         approved_by)
     return ok
@@ -852,8 +852,8 @@ def edit_transaksi_pptk(no: int, sub_kegiatan: str, kode_rekening: str,
     # Draft tidak boleh memiliki tanggal approval / pengesang lama.
     if "TANGGAL_APPROVAL" in df.columns:
         df.loc[mask, "TANGGAL_APPROVAL"] = ""
-    if "DISETUJUI_OLEH" in df.columns:
-        df.loc[mask, "DISETUJUI_OLEH"] = ""
+    if "DIPUTUSKAN_OLEH" in df.columns:
+        df.loc[mask, "DIPUTUSKAN_OLEH"] = ""
     if "ALASAN_PENOLAKAN" in df.columns:
         df.loc[mask, "ALASAN_PENOLAKAN"] = ""
     ok = update_sheet_data("TRANSAKSI", df)
@@ -930,7 +930,7 @@ def ajukan_ulang_transaksi(no_lama: int, uraian: str, nominal: float,
     new_data["STATUS"] = "Draft"
     new_data["URAIAN"] = uraian
     new_data["NOMINAL"] = nominal
-    new_data["DISETUJUI_OLEH"] = ""
+    new_data["DIPUTUSKAN_OLEH"] = ""
     new_data["TANGGAL_APPROVAL"] = ""
     new_data["ALASAN_PENOLAKAN"] = ""
     new_row = pd.DataFrame([new_data])
