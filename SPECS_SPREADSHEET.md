@@ -102,9 +102,10 @@ Digunakan di menu Transaksi dan Dashboard. Sheet ini akan ditulis oleh aplikasi 
 | `TANGGAL PENGAJUAN` | Text | Ya | `01/01/2027` | Tanggal pengajuan (DD/MM/YYYY) |
 | `BUKTI DUKUNG SPJ` | Text | Tidak | `SPJ-001/2027` | Tautan atau nomor bukti dukungan |
 | `PPTK` | Text | Ya | `Agus Setiawan (pptk1)` | Nama dan user PPTK |
-| `STATUS` | Text | Tidak | `Draft` | Status: `Draft`, `Diajuan`, `Disetujui`, `Ditolak` (diisi aplikasi) |
-| `DISETUJUI_OLEH` | Text | Tidak | `Budi Santoso` | Nama yang menyetujui (diisi aplikasi) |
-| `TANGGAL_APPROVAL` | Text | Tidak | `02/01/2027` | Tanggal approval (diisi aplikasi) |
+| `STATUS` | Text | Tidak | `Draft` | Status: `Draft`, `Disetujui`, `Ditolak` (diisi aplikasi; `Diajuan` dihapus karena typo yang tidak pernah ditulis) |
+| `DISETUJUI_OLEH` | Text | Tidak | `Budi Santoso` | Nama yang menyetujui/menolak (diisi aplikasi) |
+| `TANGGAL_APPROVAL` | Text | Tidak | `02/01/2027` | Tanggal keputusan approval/penolakan (diisi aplikasi) |
+| `ALASAN_PENOLAKAN` | Text | Tidak | `-` | Alasan penolakan dari manajer (diisi hanya saat STATUS = `Ditolak`) |
 
 **Catatan:** Kolom `STATUS`, `DISETUJUI_OLEH`, dan `TANGGAL_APPROVAL` akan ditambahkan otomatis oleh aplikasi jika belum ada.
 
