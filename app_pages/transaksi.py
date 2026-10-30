@@ -346,7 +346,7 @@ if not df_transaksi.empty:
                 st.divider()
 
                 # ============ FORM EDIT (muncul saat tombol Edit ditekan) ============
-                if status_baris == "Draft" and st.session_state.get(edit_mode_key, False):
+                if status_baris in ("Draft", "Ditolak") and st.session_state.get(edit_mode_key, False):
                     st.markdown("**Edit transaksi (semua field dapat diubah)**")
 
                     # Sub Kegiatan di luar form agar pemilihan langsung trigger rerun,

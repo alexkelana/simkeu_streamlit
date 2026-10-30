@@ -804,8 +804,10 @@ def edit_transaksi(no: int, new_data: dict, user: str = "Sistem") -> bool:
 # Predikat kepemilikan & status (Model A — PPTK pemilik data)
 # ---------------------------------------------------------------------------
 def boleh_edit_transaksi(row: pd.Series, pptk_label: str) -> bool:
-    """Boleh diedit PPTK bila miliknya dan masih Draft."""
-    return str(row.get("PPTK", "")) == pptk_label and str(row.get("STATUS", "")) == "Draft"
+    """Boleh diedit PPTK bila miliknya dan masih Draft atau Ditolak."""
+    return str(row.get("PPTK", "")) == pptk_label and str(row.get("STATUS", "")) in (
+        "Draft", "Ditolak"
+    )
 
 
 def boleh_hapus_transaksi(row: pd.Series, pptk_label: str) -> bool:
